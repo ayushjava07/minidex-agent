@@ -1,0 +1,7 @@
+{
+    "agents": [
+        {"id":"deploy-1","role":"deploy","status":"active" },
+        {"id":"monitor-1","role":"monitor","status":"active" },
+        {"id":"report-1","role":"report","status":"active" }
+    ]
+}
