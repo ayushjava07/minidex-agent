@@ -1,0 +1,30 @@
+type AgentState struct {
+    id              String
+    role            String
+    status          String
+    lastHeartbeat   Int
+    workflow        String
+}
+
+type WorkflowState struct {
+    workflowId      String
+    step            String
+    status          String
+    assignedAgent   String
+    timestamp       Int
+}
+
+type PoolState struct {
+    contractAddress String
+    reserveA        String
+    reserveB        String
+    timestamp       Int
+}
+
+type Report struct {
+    agentId         String
+    poolState       PoolState
+    timestamp       Int
+    cid             String
+    summary         String
+}
