@@ -3,8 +3,8 @@ import { generateKeys, encryptMessage }from "./pqc.js";
 import { generateCID }from "./cid-helper.js";
 import fs from "fs";
 
-const RPC_URL = "your_rpc_url";
-const DEX_ADDRESS = "0x333...";
+const RPC_URL = "https://sepolia.infura.io/v3/cdd2389b301e4e1ca23664b3b6290860";
+const DEX_ADDRESS = "0x37b18fA954Fa516eE60f666A01A36AFCF6A59650";
 
 const DEX_ABI = [
     "function getReserves() view returns (uint, uint)",
