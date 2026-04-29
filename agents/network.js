@@ -7,7 +7,18 @@ import { gossipsub } from '@chainsafe/libp2p-gossipsub'
 import { identify } from '@libp2p/identify'
 
 export async function createAgentNode(role) {
+    const ports = {
+        'deploy':  4001,
+        'monitor': 4002,
+        'report':  4003
+    }
+
+    const port = ports[role] || 4000
+
     const node = await createLibp2p({
+        addresses: {
+            listen: [`/ip4/0.0.0.0/tcp/${port}`]
+        },
         transports: [tcp()],
         connectionEncryption: [noise()],
         streamMuxers: [mplex()],
@@ -16,7 +27,9 @@ export async function createAgentNode(role) {
         ],
         services: {
             identify: identify(),
-            pubsub: gossipsub()
+            pubsub: gossipsub({
+                allowPublishToZeroTopicPeers: true
+            })
         }
     })
 
@@ -30,11 +43,12 @@ export async function createAgentNode(role) {
     })
 
     node.addEventListener('peer:discovery', (event) => {
-        console.log(`[${role}] Found peer:`, event.detail.id.toString())
+        console.log(`[${role}] Found peer:`, 
+            event.detail.id.toString().slice(0, 20) + '...')
     })
 
     node.addEventListener('peer:connect', (event) => {
-        console.log(`[${role}] Connected to:`, event.detail.toString())
+        console.log(`[${role}] Peer connected!`)
     })
 
     return node
@@ -44,9 +58,9 @@ export async function publishMessage(node, topic, message) {
     try {
         const data = new TextEncoder().encode(JSON.stringify(message))
         await node.services.pubsub.publish(topic, data)
-        console.log(`Published to ${topic}:`, message)
+        console.log(`Published to [${topic}]`)
     } catch (err) {
-        console.log(`No peers yet on topic: ${topic}`)
+        console.log(`Publish failed: ${err.message}`)
     }
 }
 
@@ -60,5 +74,5 @@ export async function subscribeToTopic(node, topic, handler) {
             handler(data)
         }
     })
-    console.log(`Subscribed to topic: ${topic}`)
+    console.log(`Subscribed to: ${topic}`)
 }
