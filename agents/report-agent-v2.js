@@ -1,97 +1,154 @@
-import { generateCID }from "./cid-helper.js";
-import { generateKeys, encryptMessage }from "./pqc.js";
-import fs from "fs";
+import { createAgentNode, subscribeToTopic, publishMessage } from './network.js'
+import { generateCID } from './cid-helper.js'
+import { ethers } from 'ethers'
+import fs from 'fs'
 
-// ─── Workflow 1: Generate Report ───────────────────
-async function workflowGenerateReport() {
-    console.log("\n🤖 [Report Agent] Workflow 1: Generate Report");
+const RPC_URL = "https://sepolia.infura.io/v3/cdd2389b301e4e1ca23664b3b6290860"
+const DEX_ADDRESS = "0x37b18fA954Fa516eE60f666A01A36AFCF6A59650"
+const DEX_ABI = ["function getReserves() view returns (uint, uint)"]
 
-    const report = {
-        agent:"report-1",
-        workflow:"generate-report",
-        timestamp: Date.now(),
-        poolStatus:"healthy",
-        contracts: {
-            TokenA:"0x111...",
-            TokenB:"0x222...",
-            MiniDEX:"0x333..."
-        },
-        summary:"Pool operational. Liquidity present. Swaps working."
-    };
+// Track heartbeats
+const lastHeartbeat = {}
+let monitoringInterval = null
 
-    const cid = await generateCID(report);
-    console.log("📋 Report Generated");
-    console.log("📦 Report CID:", cid);
+async function doMonitorWork(node) {
+    try {
+        const provider = new ethers.JsonRpcProvider(RPC_URL)
+        const dex = new ethers.Contract(DEX_ADDRESS, DEX_ABI, provider)
+        const [resA, resB] = await dex.getReserves()
 
-    // Save report
-    fs.writeFileSync(
-        "./agents/latest-report.json",
-        JSON.stringify({...report, cid },null,2)
-    );
-
-    return { report, cid };
-}
-
-// ─── Workflow 2: Fault Tolerance ───────────────────
-async function workflowFaultTolerance() {
-    console.log("\n🤖 [Report Agent] Workflow 2: Fault Tolerance Check");
-
-    const registry = JSON.parse(fs.readFileSync("./agents/registry.json"));
-
-    registry.agents.forEach(agent => {
-        if (agent.status=== "failed") {
-            console.log(`⚠️  Agent ${agent.id} has FAILED!`);
-            console.log(`🔄 Report Agent taking over tasks of ${agent.id}`);
-
-            // Mark as recovered
-            agent.status= "recovered-by-report-1";
-        }else {
-            console.log(`✅ Agent ${agent.id} is ${agent.status}`);
+        const state = {
+            agent: 'report-1-covering-monitor',
+            reserveA: resA.toString(),
+            reserveB: resB.toString(),
+            timestamp: Date.now()
         }
-    });
 
-    fs.writeFileSync("./agents/registry.json",JSON.stringify(registry,null,2));
+        const cid = await generateCID(state)
+        console.log('Backup Pool CID:', cid)
+        console.log('ReserveA:', ethers.formatEther(resA))
+        console.log('ReserveB:', ethers.formatEther(resB))
 
-    const cid = await generateCID(registry);
-    console.log("📦 Updated Registry CID:", cid);
+        await publishMessage(node, 'heartbeat', {
+            agent: 'report-1-covering-monitor-1',
+            status: 'active',
+            covering: 'monitor-1',
+            timestamp: Date.now()
+        })
+    } catch (err) {
+        console.log('Backup monitoring error:', err.message)
+    }
 }
 
-// ─── Workflow 3: Final Summary ─────────────────────
-async function workflowFinalSummary() {
-    console.log("\n🤖 [Report Agent] Workflow 3: Final Summary");
-
-    const summary = {
-        agent:"report-1",
-        workflow:"final-summary",
+async function generateReport() {
+    const report = {
+        agent: 'report-1',
+        workflow: 'generate-report',
         timestamp: Date.now(),
-        message:"All systems operational. DEX live on Sepolia.",
-        testnet:"Sepolia",
-        status:"success"
-    };
+        poolStatus: 'healthy',
+        contracts: {
+            TokenA: '0xF7a7152a2A939e21e0B0aBb34F12e2B260c5A5ED',
+            TokenB: '0x95C5F14106ab4d1dc0cFC9326C287B702619A761',
+            MiniDEX: DEX_ADDRESS
+        },
+        summary: 'Pool operational. Liquidity present. Swaps working.'
+    }
 
-    const cid = await generateCID(summary);
+    const cid = await generateCID(report)
+    console.log('Report CID:', cid)
 
-    console.log("═══════════════════════════════════");
-    console.log("   📊 FINAL SUMMARY");
-    console.log("═══════════════════════════════════");
-    console.log("   Status  :", summary.status);
-    console.log("   Network :", summary.testnet);
-    console.log("   Message :", summary.message);
-    console.log("   CID     :", cid);
-    console.log("═══════════════════════════════════");
+    fs.writeFileSync(
+        './agents/latest-report.json',
+        JSON.stringify({ ...report, cid }, null, 2)
+    )
+
+    return { report, cid }
 }
 
-// ─── Main ──────────────────────────────────────────
 async function main() {
-    console.log("═══════════════════════════════════");
-    console.log("   📝 Report Agent Started");
-    console.log("═══════════════════════════════════");
+    console.log("===================================")
+    console.log("   Report Agent v2 Started")
+    console.log("   Using libp2p peer discovery")
+    console.log("===================================")
 
-    await workflowGenerateReport();
-    await workflowFaultTolerance();
-    await workflowFinalSummary();
+    const node = await createAgentNode('report')
 
-    console.log("\n✅ Report Agent: All workflows complete");
+    // Listen for heartbeats from all agents
+    await subscribeToTopic(node, 'heartbeat', (message) => {
+        console.log('Heartbeat from:', message.agent, '| status:', message.status)
+        lastHeartbeat[message.agent] = Date.now()
+
+        // Monitor wapas aa gaya
+        if (message.agent === 'monitor-1' && monitoringInterval) {
+            console.log('Monitor agent is back - stopping backup monitoring')
+            clearInterval(monitoringInterval)
+            monitoringInterval = null
+        }
+    })
+
+    // Listen for task messages
+    await subscribeToTopic(node, 'agent-tasks', (message) => {
+        console.log('Task received:', message.type)
+    })
+
+    // Generate initial report
+    await generateReport()
+
+    // Fault detection - har 15 seconds check karo
+    setInterval(async () => {
+        const registry = JSON.parse(
+            fs.readFileSync('./agents/registry.json')
+        )
+
+        for (const agent of registry.agents) {
+            if (agent.id === 'report-1') continue
+
+            const lastSeen = lastHeartbeat[agent.id]
+            const now = Date.now()
+
+            if (lastSeen && (now - lastSeen) > 30000) {
+                console.log('ALERT: ' + agent.id + ' silent for 30 seconds')
+                console.log('Report agent taking over ' + agent.id + ' tasks')
+
+                agent.status = 'failed'
+                fs.writeFileSync(
+                    './agents/registry.json',
+                    JSON.stringify(registry, null, 2)
+                )
+
+                // Monitor ka kaam lo
+                if (agent.id === 'monitor-1' && !monitoringInterval) {
+                    console.log('Starting backup pool monitoring...')
+                    monitoringInterval = setInterval(async () => {
+                        await doMonitorWork(node)
+                    }, 10000)
+                }
+
+            } else if (!lastSeen) {
+                console.log('Waiting for heartbeat from:', agent.id)
+            }
+        }
+    }, 15000)
+
+    // Apna heartbeat bhejo
+    setInterval(async () => {
+        await publishMessage(node, 'heartbeat', {
+            agent: 'report-1',
+            status: 'active',
+            timestamp: Date.now()
+        })
+    }, 10000)
+
+    console.log('Report Agent: Listening for events...')
+
+    const shutdown = async () => {
+        if (monitoringInterval) clearInterval(monitoringInterval)
+        await node.stop()
+        process.exit(0)
+    }
+
+    process.on('SIGINT', shutdown)
+    process.on('SIGTERM', shutdown)
 }
 
-main();
+main()
