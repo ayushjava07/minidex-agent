@@ -1,7 +1,7 @@
 {
   "agent": "report-1",
   "workflow": "generate-report",
-  "timestamp": 1777396129760,
+  "timestamp": 1777439026351,
   "poolStatus": "healthy",
   "contracts": {
     "TokenA": "0x111...",
@@ -9,5 +9,5 @@
     "MiniDEX": "0x333..."
   },
   "summary": "Pool operational. Liquidity present. Swaps working.",
-  "cid": "bagaaierayh66lbr2cumnczd6xvuwjpaupotlrnadbq4vzgpsgw7pgujapuha"
+  "cid": "bagaaierazsrsvrohfwtin2errqqjegchgg4komcezbagbrrpjnujwno2e6xq"
 }
