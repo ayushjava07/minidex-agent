@@ -1,61 +1,47 @@
-import { createAgentNode, publishMessage } from './network.js'
-import { generateCID } from './cid-helper.js'
-import { generateKeys, encryptMessage } from './pqc.js'
+import { createAgentNode, publishMessage, subscribeToTopic } from './network.js'
 
 async function main() {
-    console.log("===================================")
-    console.log("   Deploy Agent v2 Started")
-    console.log("   Using libp2p peer discovery")
-    console.log("===================================")
+  console.log("=== Deploy Agent v2 ===")
+  
+  const node = await createAgentNode('deploy')
 
-    const node = await createAgentNode('deploy')
+  subscribeToTopic(node, 'heartbeat', (data) => {
+    console.log(`[Heartbeat] Received from ${data.agent}: ${data.status}`)
+  })
 
-    // Subscribe first
-    node.services.pubsub.subscribe('agent-tasks')
-    node.services.pubsub.subscribe('heartbeat')
+  // 15 seconds wait karo - sab agents start hone do
+  console.log('Waiting 15 seconds for all agents to start...')
+  await new Promise(resolve => setTimeout(resolve, 15000))
+  console.log('Starting heartbeat...')
 
-    // Wait for peers
-    console.log('Waiting for peers (10 sec)...')
-    await new Promise(resolve => setTimeout(resolve, 10000))
+  // Pehla heartbeat turant bhejo
+  await publishMessage(node, 'heartbeat', {
+    agent: 'deploy',
+    status: 'active',
+    timestamp: new Date().toISOString()
+  })
 
-    const state = {
-        agent: 'deploy-1',
-        peerId: node.peerId.toString(),
-        workflow: 'deploy',
-        status: 'completed',
-        timestamp: Date.now()
+  // Phir har 10 seconds
+  setInterval(async () => {
+    try {
+      await publishMessage(node, 'heartbeat', {
+        agent: 'deploy',
+        status: 'active',
+        timestamp: new Date().toISOString()
+      })
+    } catch (err) {
+      console.error('Failed to send heartbeat:', err.message)
     }
+  }, 10000)
 
-    const cid = await generateCID(state)
-    console.log('State CID:', cid)
+  const shutdown = async () => {
+    console.log('\nStopping Deploy Agent...')
+    await node.stop()
+    process.exit(0)
+  }
 
-    await publishMessage(node, 'agent-tasks', {
-        type: 'DEPLOY_COMPLETE',
-        from: node.peerId.toString(),
-        cid: cid,
-        timestamp: Date.now()
-    })
-
-    const { publicKey } = generateKeys()
-    const msg = encryptMessage(publicKey, 'deploy complete')
-    console.log('PQC Message:', msg.cipherText.slice(0, 30) + '...')
-
-    console.log('Deploy Agent: Running...')
-
-    // Keep alive with heartbeat
-    setInterval(async () => {
-        await publishMessage(node, 'heartbeat', {
-            agent: 'deploy-1',
-            status: 'active',
-            timestamp: Date.now()
-        })
-    }, 10000)
-
-    process.on('SIGINT', async () => {
-        console.log('Deploy Agent stopping...')
-        await node.stop()
-        process.exit(0)
-    })
+  process.on('SIGINT', shutdown)
+  process.on('SIGTERM', shutdown)
 }
 
-main()
+main().catch(console.error)

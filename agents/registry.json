@@ -8,7 +8,7 @@
     {
       "id": "monitor-1",
       "role": "monitor",
-      "status": "recovered-by-report-1",
+      "status": "failed",
       "lastHeartbeat": 1777396054311
     },
     {

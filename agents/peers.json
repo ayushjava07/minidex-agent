@@ -1,0 +1,14 @@
+{
+  "monitor": {
+    "libp2pAddr": "/ip4/127.0.0.1/tcp/4002/p2p/12D3KooWLyhVq5wPFUgxFqzJbnq1NWd7GmbaRhrM9R5BVsRzSjmz",
+    "msgPort": 5002
+  },
+  "deploy": {
+    "libp2pAddr": "/ip4/127.0.0.1/tcp/4001/p2p/12D3KooWB2ZNGsAW1aWMyandjuunHV7ruhPvJUtm7Np5r9y5NcEV",
+    "msgPort": 5001
+  },
+  "report": {
+    "libp2pAddr": "/ip4/127.0.0.1/tcp/4003/p2p/12D3KooWQtTQmAqCzJkctJGPYq6vBMkrkg5dksojFowmztfBkfyW",
+    "msgPort": 5003
+  }
+}
