@@ -1,7 +1,6 @@
 import { createAgentNode, publishMessage, subscribeToTopic } from './network.js'
 import { generateCID } from './cid-helper.js'
 import { ethers } from 'ethers'
-import fs from 'fs'
 
 const RPC_URL = "https://sepolia.infura.io/v3/cdd2389b301e4e1ca23664b3b6290860"
 const DEX_ADDRESS = "0x37b18fA954Fa516eE60f666A01A36AFCF6A59650"
@@ -24,10 +23,12 @@ async function monitorPool(coveredBy) {
         }
 
         const cid = await generateCID(state)
-        console.log(`[Report] Pool check - ReserveA: ${ethers.formatEther(resA)}`)
-        console.log(`[Report] Pool CID: ${cid}`)
+        console.log('[Report] Backup Pool Monitor:')
+        console.log('  ReserveA:', ethers.formatEther(resA))
+        console.log('  ReserveB:', ethers.formatEther(resB))
+        console.log('  CID:', cid)
     } catch (err) {
-        console.log('[Report] Pool check error:', err.message)
+        console.log('[Report] Pool error:', err.message)
     }
 }
 
@@ -36,12 +37,10 @@ async function main() {
 
     const node = await createAgentNode('report')
 
-    // Heartbeat suno - track karo
     subscribeToTopic(node, 'heartbeat', (data) => {
-        console.log(`[Heartbeat] Received from ${data.agent}: ${data.status}`)
+        console.log(`[Report] Heartbeat from ${data.agent}: ${data.status}`)
         lastHeartbeat[data.agent] = Date.now()
 
-        // Monitor wapas aaya
         if (data.agent === 'monitor' && backupMonitoring) {
             console.log('[Report] Monitor recovered - stopping backup')
             clearInterval(backupMonitoring)
@@ -49,32 +48,44 @@ async function main() {
         }
     })
 
-    // Fault detection - har 15 seconds
-    setInterval(async () => {
+    subscribeToTopic(node, 'agent-tasks', (data) => {
+        console.log(`[Report] Task received: ${data.type}`)
+    })
+
+
+    console.log('[Report] Waiting 15 seconds for all agents...')
+    await new Promise(resolve => setTimeout(resolve, 15000))
+    console.log('[Report] Active - monitoring started')
+
+    // Fault detection
+    setInterval(() => {
         const now = Date.now()
 
-        for (const [agent, lastSeen] of Object.entries(lastHeartbeat)) {
-            const silent = now - lastSeen
+        if (Object.keys(lastHeartbeat).length === 0) {
+            console.log('[Report] No heartbeats yet')
+            return
+        }
 
-            if (silent > 30000) {
-                console.log(`[Report] ALERT: ${agent} silent for ${Math.floor(silent/1000)}s`)
+        for (const [agent, lastSeen] of Object.entries(lastHeartbeat)) {
+            const silentFor = Math.floor((now - lastSeen) / 1000)
+
+            if (silentFor > 30) {
+                console.log(`[Report] ALERT: ${agent} DOWN for ${silentFor}s`)
 
                 if (agent === 'monitor' && !backupMonitoring) {
                     console.log('[Report] Taking over monitor tasks...')
-                    backupMonitoring = setInterval(async () => {
-                        await monitorPool('report-covering-monitor')
+                    monitorPool('report-covering-monitor')
+                    backupMonitoring = setInterval(() => {
+                        monitorPool('report-covering-monitor')
                     }, 10000)
                 }
+            } else {
+                console.log(`[Report] ${agent} ok - last seen ${silentFor}s ago`)
             }
         }
     }, 15000)
 
-    // Wait for all agents
-    console.log('Waiting 15 seconds for all agents...')
-    await new Promise(resolve => setTimeout(resolve, 15000))
-    console.log('Starting heartbeat...')
-
-    // Apna heartbeat bhejo
+    // Heartbeat
     setInterval(async () => {
         await publishMessage(node, 'heartbeat', {
             agent: 'report',

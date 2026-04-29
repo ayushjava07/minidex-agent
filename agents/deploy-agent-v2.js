@@ -1,47 +1,64 @@
 import { createAgentNode, publishMessage, subscribeToTopic } from './network.js'
+import { generateCID } from './cid-helper.js'
+import { generateKeys, encryptMessage } from './pqc.js'
 
 async function main() {
-  console.log("=== Deploy Agent v2 ===")
-  
-  const node = await createAgentNode('deploy')
+    console.log("=== Deploy Agent v2 ===")
 
-  subscribeToTopic(node, 'heartbeat', (data) => {
-    console.log(`[Heartbeat] Received from ${data.agent}: ${data.status}`)
-  })
+    const node = await createAgentNode('deploy')
 
-  // 15 seconds wait karo - sab agents start hone do
-  console.log('Waiting 15 seconds for all agents to start...')
-  await new Promise(resolve => setTimeout(resolve, 15000))
-  console.log('Starting heartbeat...')
+    subscribeToTopic(node, 'heartbeat', (data) => {
+        console.log(`[Deploy] Heartbeat from ${data.agent}: ${data.status}`)
+    })
 
-  // Pehla heartbeat turant bhejo
-  await publishMessage(node, 'heartbeat', {
-    agent: 'deploy',
-    status: 'active',
-    timestamp: new Date().toISOString()
-  })
+    subscribeToTopic(node, 'agent-tasks', (data) => {
+        console.log(`[Deploy] Task received: ${data.type}`)
+    })
 
-  // Phir har 10 seconds
-  setInterval(async () => {
-    try {
-      await publishMessage(node, 'heartbeat', {
+    console.log('[Deploy] Waiting 15 seconds for all agents...')
+    await new Promise(resolve => setTimeout(resolve, 15000))
+    console.log('[Deploy] Active')
+
+    // Deploy state
+    const state = {
         agent: 'deploy',
-        status: 'active',
-        timestamp: new Date().toISOString()
-      })
-    } catch (err) {
-      console.error('Failed to send heartbeat:', err.message)
+        workflow: 'deploy',
+        status: 'completed',
+        timestamp: Date.now()
     }
-  }, 10000)
+    const cid = await generateCID(state)
+    console.log('[Deploy] State CID:', cid)
 
-  const shutdown = async () => {
-    console.log('\nStopping Deploy Agent...')
-    await node.stop()
-    process.exit(0)
-  }
+    // PQC demo
+    const { publicKey } = generateKeys()
+    const msg = encryptMessage(publicKey, 'deploy complete')
+    console.log('[Deploy] PQC Message:', msg.cipherText.slice(0, 30) + '...')
 
-  process.on('SIGINT', shutdown)
-  process.on('SIGTERM', shutdown)
+    // Broadcast deploy complete
+    await publishMessage(node, 'agent-tasks', {
+        type: 'DEPLOY_COMPLETE',
+        agent: 'deploy',
+        cid: cid,
+        timestamp: new Date().toISOString()
+    })
+
+    // Heartbeat
+    setInterval(async () => {
+        await publishMessage(node, 'heartbeat', {
+            agent: 'deploy',
+            status: 'active',
+            timestamp: new Date().toISOString()
+        })
+    }, 10000)
+
+    const shutdown = async () => {
+        console.log('\nStopping Deploy Agent...')
+        await node.stop()
+        process.exit(0)
+    }
+
+    process.on('SIGINT', shutdown)
+    process.on('SIGTERM', shutdown)
 }
 
 main().catch(console.error)
