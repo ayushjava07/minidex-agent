@@ -1,92 +1,101 @@
-import { generateCID } from './cid-helper.js'
+import * as dagCBOR from '@ipld/dag-cbor'
+import { CID } from 'multiformats/cid'
+import { sha256 } from 'multiformats/hashes/sha2'
 import fs from 'fs'
 import path from 'path'
 
 const LOG_FILE = path.join(process.cwd(), 'agents', 'task-log.json')
+const EXEC_FILE = path.join(process.cwd(), 'agents', 'execution-log.json')
 
-// Task log karo
+// DAG-CBOR CID generate karo
+async function generateIPLDCID(data) {
+    const bytes = dagCBOR.encode(data)
+    const hash = await sha256.digest(bytes)
+    const cid = CID.create(1, dagCBOR.code, hash)
+    return cid.toString()
+}
+
+// File  saving 
+function saveToFile(filePath, entry) {
+    let logs = []
+    if (fs.existsSync(filePath)) {
+        try {
+            logs = JSON.parse(fs.readFileSync(filePath, 'utf8'))
+        } catch(e) {
+            logs = []
+        }
+    }
+    logs.push(entry)
+    fs.writeFileSync(filePath, JSON.stringify(logs, null, 2))
+}
+
 export async function logTask(taskData) {
-    // Task node banao
+    // Real IPLD Task DAG Node
     const taskNode = {
-        task_id:            null,
-        parent_task:        taskData.parentCID || null,
         assigned_to:        taskData.agent,
         workflow:           taskData.workflow,
         status:             taskData.status,
         explanation:        taskData.explanation,
         timestamp:          Date.now(),
-        inputs:             taskData.inputs   || {},
-        outputs:            taskData.outputs  || null,
+        inputs:             taskData.inputs  || {},
+        outputs:            taskData.outputs || null,
+        parent_task:        taskData.parentCID || null,
         escalated_to_human: false,
         subtasks:           []
     }
 
-    // CID generate karo
-    const cid = await generateCID(taskNode)
+    // make CID FROM DAG-CBOR
+    const cid = await generateIPLDCID(taskNode)
     taskNode.task_id = cid
 
-    // File mein save karo
-    let logs = []
-    if (fs.existsSync(LOG_FILE)) {
-        try {
-            logs = JSON.parse(fs.readFileSync(LOG_FILE, 'utf8'))
-        } catch(e) {
-            logs = []
-        }
-    }
+    saveToFile(LOG_FILE, taskNode)
 
-    logs.push(taskNode)
-    fs.writeFileSync(LOG_FILE, JSON.stringify(logs, null, 2))
-
-    console.log(`[IPLD] Task logged`)
-    console.log(`[IPLD] Workflow: ${taskData.workflow}`)
-    console.log(`[IPLD] CID: ${cid}`)
+    console.log(`[IPLD] Task Node created`)
+    console.log(`[IPLD] Workflow  : ${taskData.workflow}`)
+    console.log(`[IPLD] Agent     : ${taskData.agent}`)
+    console.log(`[IPLD] Status    : ${taskData.status}`)
+    console.log(`[IPLD] CID       : ${cid}`)
     if (taskData.parentCID) {
-        console.log(`[IPLD] Parent CID: ${taskData.parentCID}`)
+        console.log(`[IPLD] Parent    : ${taskData.parentCID}`)
     }
 
     return cid
 }
 
-// Execution log karo
 export async function logExecution(execData) {
+    // Real IPLD Execution Log Node
     const execNode = {
-        log_id:    null,
         task_ref:  execData.taskCID,
-        timestamp: Date.now(),
         event:     execData.event,
         agent:     execData.agent,
         outcome:   execData.outcome,
-        tx_hash:   execData.txHash || null,
+        timestamp: Date.now(),
+        tx_hash:   execData.txHash  || null,
         gas_used:  execData.gasUsed || null
     }
 
-    const cid = await generateCID(execNode)
+    // make CID FROM DAG-CBOR
+    const cid = await generateIPLDCID(execNode)
     execNode.log_id = cid
 
-    // Execution log file
-    const execFile = path.join(process.cwd(), 'agents', 'execution-log.json')
-    let logs = []
-    if (fs.existsSync(execFile)) {
-        try {
-            logs = JSON.parse(fs.readFileSync(execFile, 'utf8'))
-        } catch(e) {
-            logs = []
-        }
-    }
+    saveToFile(EXEC_FILE, execNode)
 
-    logs.push(execNode)
-    fs.writeFileSync(execFile, JSON.stringify(logs, null, 2))
-
-    console.log(`[IPLD] Execution logged`)
-    console.log(`[IPLD] Event: ${execData.event}`)
-    console.log(`[IPLD] CID: ${cid}`)
+    console.log(`[IPLD] Execution Node created`)
+    console.log(`[IPLD] Event     : ${execData.event}`)
+    console.log(`[IPLD] Agent     : ${execData.agent}`)
+    console.log(`[IPLD] Outcome   : ${execData.outcome}`)
+    console.log(`[IPLD] CID       : ${cid}`)
+    console.log(`[IPLD] Task ref  : ${execData.taskCID}`)
 
     return cid
 }
 
-// Task history dekho
 export function getTaskHistory() {
     if (!fs.existsSync(LOG_FILE)) return []
     return JSON.parse(fs.readFileSync(LOG_FILE, 'utf8'))
+}
+
+export function getExecutionHistory() {
+    if (!fs.existsSync(EXEC_FILE)) return []
+    return JSON.parse(fs.readFileSync(EXEC_FILE, 'utf8'))
 }
