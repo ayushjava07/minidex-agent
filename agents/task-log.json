@@ -3929,5 +3929,469 @@
     "escalated_to_human": false,
     "subtasks": [],
     "task_id": "bafyreifkyfp7al5tsvbiqvkxtupz6prlmhq4wv7pehzikevnqkef5fl5my"
+  },
+  {
+    "parent_task": null,
+    "assigned_to": "12D3KooWG79j34W3B2jRZeqhEWTtQpRR8qdZ3ATzuq8m1KRrZcZE",
+    "workflow": "monitor-agent-startup",
+    "status": "in-progress",
+    "explanation": "Monitor agent started - watching pool reserves on Sepolia",
+    "timestamp": 1777613810723,
+    "inputs": {
+      "role": "monitor",
+      "contract": "0x37b18fA954Fa516eE60f666A01A36AFCF6A59650"
+    },
+    "outputs": null,
+    "escalated_to_human": false,
+    "subtasks": [],
+    "task_id": "bafyreid3cypd3fnesh7w72cucjwvyxd3eu3zf5bi7x6knvbodyrgvmiiem"
+  },
+  {
+    "parent_task": null,
+    "assigned_to": "12D3KooWGYxEFJyKMAywp265iNZnqCKjj3FeFSHzmny9cjWD6BAp",
+    "workflow": "monitor-agent-startup",
+    "status": "in-progress",
+    "explanation": "Monitor agent started - watching pool reserves on Sepolia",
+    "timestamp": 1777613822570,
+    "inputs": {
+      "role": "monitor",
+      "contract": "0x37b18fA954Fa516eE60f666A01A36AFCF6A59650"
+    },
+    "outputs": null,
+    "escalated_to_human": false,
+    "subtasks": [
+      "bafyreigb4tesonqhgorwxtk7tbjgsq3j7abrxd5ymmcjevyp24xyqm3gti",
+      "bafyreigl3s3mo3nzz4eqihkf74q2pey64yeibzfpzsw7zkp7iivvf5xv2u",
+      "bafyreibdhtqabhffe2577i33lknoux6kcfd5gqy4ler6tbn2qqmx5vli5q",
+      "bafyreif6ih3ptrephruf4ig4kgcqyqagzw7y4vuwdsu5y4lhqoutzfvg4i",
+      "bafyreibr2j72akun7n24nv33zqcigc366owndulbuf7soeixnhekhzv6tq",
+      "bafyreihltgjedm7wstfqfahjhwk5hpurvlp6mayfedgoitebdc3erm5axq",
+      "bafyreihw37uwrympm7x5g74l6upbdaxp2xjllnlmtjpmdq4jyh62nd2wii",
+      "bafyreif7kgkjuqkywb4nt6ft3bq3tu27lywpflbzebpjzivyymh5x5bpwu",
+      "bafyreidr2x57ngrw46xkqxc6abzx425w5mf2xnhweioxjjscy5gaeu42e4",
+      "bafyreib53t74opsy2dm7rdiylwwrfovocmbh5knwnwwda6irr6xq5xfaiu",
+      "bafyreifzpgr54xruh3q2op2ehvdz3gkpoxk3xsqrqrlkxkoet6rutbgmtq",
+      "bafyreihh4abshvjclopled4bs3nfuen3chawatt3sgf5f7odb5jdnktf4i",
+      "bafyreib6s4rhxur62qp2bjv336uzojdn66uy6el7oknahkelowupstnrny",
+      "bafyreifcs6y3dka34hq774kcuhonheqkfdd2gzdsamsumlj47pqf2tgvpi",
+      "bafyreigtbxjlflgf6pldokpmtlqydooqvsnvgug3urrwkqn2pwj6y3eqvu",
+      "bafyreif4unvw7olw2txat6jowq5napf3qne7ty35pgh4tadziubpot7gqe",
+      "bafyreidqiz44qsrxd3xqfuheauniqylj5ajki6zu3v6fvhb7cjqffrda3y"
+    ],
+    "task_id": "bafyreicvwg4kn3wsom3s6dj3b7hom2zcy75u2f474klrbhlbm7guuqwcw4"
+  },
+  {
+    "parent_task": null,
+    "assigned_to": "12D3KooWN7HsAUC6yGMpJps8hofTiTeUFEGwT5p4TdgDNf3hAaZm",
+    "workflow": "deploy-agent-startup",
+    "status": "in-progress",
+    "explanation": "Deploy agent started - managing contract deployments on Sepolia",
+    "timestamp": 1777613824122,
+    "inputs": {
+      "role": "deploy",
+      "network": "sepolia"
+    },
+    "outputs": null,
+    "escalated_to_human": false,
+    "subtasks": [
+      "bafyreicfwqltsopnzie2oo4g53phqu7b4vcz7hacqec5mrtzy6sfqo362u"
+    ],
+    "task_id": "bafyreihzj2q5uy53fy2epjbganptemztwbm75q23pzkeqyymoebuaati6i"
+  },
+  {
+    "parent_task": null,
+    "assigned_to": "12D3KooWAL3363UH7RW11okA5sVcLPdJpNKi9PJe1d7BwE1uRxFA",
+    "workflow": "report-agent-startup",
+    "status": "in-progress",
+    "explanation": "Report agent started - monitoring system health and fault recovery",
+    "timestamp": 1777613825407,
+    "inputs": {
+      "role": "report",
+      "network": "sepolia"
+    },
+    "outputs": null,
+    "escalated_to_human": false,
+    "subtasks": [],
+    "task_id": "bafyreigsq3ebd5c73mb4wulqpxupil6iymqk3yxwu6uzhmmsogouwwhlse"
+  },
+  {
+    "parent_task": "bafyreihzj2q5uy53fy2epjbganptemztwbm75q23pzkeqyymoebuaati6i",
+    "assigned_to": "12D3KooWN7HsAUC6yGMpJps8hofTiTeUFEGwT5p4TdgDNf3hAaZm",
+    "workflow": "contract-deployment",
+    "status": "completed",
+    "explanation": "ERC20 tokens and MiniDEX deployed and verified on Sepolia testnet",
+    "timestamp": 1777613839131,
+    "inputs": {
+      "network": "sepolia",
+      "contracts": [
+        "TokenA",
+        "TokenB",
+        "MiniDEX"
+      ]
+    },
+    "outputs": {
+      "tokenA": "0xF7a7152a2A939e21e0B0aBb34F12e2B260c5A5ED",
+      "tokenB": "0x95C5F14106ab4d1dc0cFC9326C287B702619A761",
+      "dex": "0x37b18fA954Fa516eE60f666A01A36AFCF6A59650"
+    },
+    "escalated_to_human": false,
+    "subtasks": [
+      "bafyreihp5jrbkuotbe4o5qrpxaorpvxs2sji6nmhmmaamjalcgfgqxa2qm"
+    ],
+    "task_id": "bafyreicfwqltsopnzie2oo4g53phqu7b4vcz7hacqec5mrtzy6sfqo362u"
+  },
+  {
+    "parent_task": "bafyreicfwqltsopnzie2oo4g53phqu7b4vcz7hacqec5mrtzy6sfqo362u",
+    "assigned_to": "12D3KooWN7HsAUC6yGMpJps8hofTiTeUFEGwT5p4TdgDNf3hAaZm",
+    "workflow": "pqc-encrypted-broadcast",
+    "status": "completed",
+    "explanation": "Deploy complete signal encrypted with ML-KEM-768 + AES-256-CBC and sent to monitor",
+    "timestamp": 1777613839141,
+    "inputs": {
+      "targetAgent": "monitor",
+      "algorithm": "ML-KEM-768 + AES-256-CBC"
+    },
+    "outputs": null,
+    "escalated_to_human": false,
+    "subtasks": [],
+    "task_id": "bafyreihp5jrbkuotbe4o5qrpxaorpvxs2sji6nmhmmaamjalcgfgqxa2qm"
+  },
+  {
+    "parent_task": "bafyreihzj2q5uy53fy2epjbganptemztwbm75q23pzkeqyymoebuaati6i",
+    "assigned_to": "12D3KooWN7HsAUC6yGMpJps8hofTiTeUFEGwT5p4TdgDNf3hAaZm",
+    "workflow": "peer-registration",
+    "status": "completed",
+    "explanation": "Deploy agent registered in peer network with libp2p identity",
+    "timestamp": 1777613839145,
+    "inputs": {
+      "peerId": "12D3KooWN7HsAUC6yGMpJps8hofTiTeUFEGwT5p4TdgDNf3hAaZm",
+      "protocol": "/atos/1.0.0"
+    },
+    "outputs": null,
+    "escalated_to_human": false,
+    "subtasks": [],
+    "task_id": "bafyreigyvh7kz462wyyktkna7lfxht6ems3h6p4jxkrnhczzxhfvequn3y"
+  },
+  {
+    "parent_task": "bafyreicvwg4kn3wsom3s6dj3b7hom2zcy75u2f474klrbhlbm7guuqwcw4",
+    "assigned_to": "12D3KooWGYxEFJyKMAywp265iNZnqCKjj3FeFSHzmny9cjWD6BAp",
+    "workflow": "pqc-message-received",
+    "status": "completed",
+    "explanation": "Received and decrypted PQC message from deploy agent using ML-KEM-768 + AES-256-CBC",
+    "timestamp": 1777613839145,
+    "inputs": {
+      "algorithm": "ML-KEM-768 + AES-256-CBC",
+      "from": "deploy"
+    },
+    "outputs": {
+      "messageType": "DEPLOY_COMPLETE"
+    },
+    "escalated_to_human": false,
+    "subtasks": [],
+    "task_id": "bafyreigb4tesonqhgorwxtk7tbjgsq3j7abrxd5ymmcjevyp24xyqm3gti"
+  },
+  {
+    "parent_task": "bafyreicvwg4kn3wsom3s6dj3b7hom2zcy75u2f474klrbhlbm7guuqwcw4",
+    "assigned_to": "12D3KooWGYxEFJyKMAywp265iNZnqCKjj3FeFSHzmny9cjWD6BAp",
+    "workflow": "monitor-pool",
+    "status": "completed",
+    "explanation": "Fetched live pool reserves from Sepolia MiniDEX contract",
+    "timestamp": 1777613848146,
+    "inputs": {
+      "contract": "0x37b18fA954Fa516eE60f666A01A36AFCF6A59650",
+      "network": "sepolia"
+    },
+    "outputs": {
+      "reserveA": "14200.0",
+      "reserveB": "23368.139177895275456253"
+    },
+    "escalated_to_human": false,
+    "subtasks": [],
+    "task_id": "bafyreigl3s3mo3nzz4eqihkf74q2pey64yeibzfpzsw7zkp7iivvf5xv2u"
+  },
+  {
+    "parent_task": "bafyreicvwg4kn3wsom3s6dj3b7hom2zcy75u2f474klrbhlbm7guuqwcw4",
+    "assigned_to": "12D3KooWGYxEFJyKMAywp265iNZnqCKjj3FeFSHzmny9cjWD6BAp",
+    "workflow": "monitor-pool",
+    "status": "completed",
+    "explanation": "Fetched live pool reserves from Sepolia MiniDEX contract",
+    "timestamp": 1777613860940,
+    "inputs": {
+      "contract": "0x37b18fA954Fa516eE60f666A01A36AFCF6A59650",
+      "network": "sepolia"
+    },
+    "outputs": {
+      "reserveA": "14200.0",
+      "reserveB": "23368.139177895275456253"
+    },
+    "escalated_to_human": false,
+    "subtasks": [],
+    "task_id": "bafyreibdhtqabhffe2577i33lknoux6kcfd5gqy4ler6tbn2qqmx5vli5q"
+  },
+  {
+    "parent_task": "bafyreicvwg4kn3wsom3s6dj3b7hom2zcy75u2f474klrbhlbm7guuqwcw4",
+    "assigned_to": "12D3KooWGYxEFJyKMAywp265iNZnqCKjj3FeFSHzmny9cjWD6BAp",
+    "workflow": "monitor-pool",
+    "status": "completed",
+    "explanation": "Fetched live pool reserves from Sepolia MiniDEX contract",
+    "timestamp": 1777613882207,
+    "inputs": {
+      "contract": "0x37b18fA954Fa516eE60f666A01A36AFCF6A59650",
+      "network": "sepolia"
+    },
+    "outputs": {
+      "reserveA": "14200.0",
+      "reserveB": "23368.139177895275456253"
+    },
+    "escalated_to_human": false,
+    "subtasks": [],
+    "task_id": "bafyreif6ih3ptrephruf4ig4kgcqyqagzw7y4vuwdsu5y4lhqoutzfvg4i"
+  },
+  {
+    "parent_task": "bafyreicvwg4kn3wsom3s6dj3b7hom2zcy75u2f474klrbhlbm7guuqwcw4",
+    "assigned_to": "12D3KooWGYxEFJyKMAywp265iNZnqCKjj3FeFSHzmny9cjWD6BAp",
+    "workflow": "monitor-pool",
+    "status": "completed",
+    "explanation": "Fetched live pool reserves from Sepolia MiniDEX contract",
+    "timestamp": 1777613886688,
+    "inputs": {
+      "contract": "0x37b18fA954Fa516eE60f666A01A36AFCF6A59650",
+      "network": "sepolia"
+    },
+    "outputs": {
+      "reserveA": "14200.0",
+      "reserveB": "23368.139177895275456253"
+    },
+    "escalated_to_human": false,
+    "subtasks": [],
+    "task_id": "bafyreibr2j72akun7n24nv33zqcigc366owndulbuf7soeixnhekhzv6tq"
+  },
+  {
+    "parent_task": "bafyreicvwg4kn3wsom3s6dj3b7hom2zcy75u2f474klrbhlbm7guuqwcw4",
+    "assigned_to": "12D3KooWGYxEFJyKMAywp265iNZnqCKjj3FeFSHzmny9cjWD6BAp",
+    "workflow": "monitor-pool",
+    "status": "completed",
+    "explanation": "Fetched live pool reserves from Sepolia MiniDEX contract",
+    "timestamp": 1777613890505,
+    "inputs": {
+      "contract": "0x37b18fA954Fa516eE60f666A01A36AFCF6A59650",
+      "network": "sepolia"
+    },
+    "outputs": {
+      "reserveA": "14200.0",
+      "reserveB": "23368.139177895275456253"
+    },
+    "escalated_to_human": false,
+    "subtasks": [],
+    "task_id": "bafyreihltgjedm7wstfqfahjhwk5hpurvlp6mayfedgoitebdc3erm5axq"
+  },
+  {
+    "parent_task": "bafyreicvwg4kn3wsom3s6dj3b7hom2zcy75u2f474klrbhlbm7guuqwcw4",
+    "assigned_to": "12D3KooWGYxEFJyKMAywp265iNZnqCKjj3FeFSHzmny9cjWD6BAp",
+    "workflow": "monitor-pool",
+    "status": "completed",
+    "explanation": "Fetched live pool reserves from Sepolia MiniDEX contract",
+    "timestamp": 1777613907680,
+    "inputs": {
+      "contract": "0x37b18fA954Fa516eE60f666A01A36AFCF6A59650",
+      "network": "sepolia"
+    },
+    "outputs": {
+      "reserveA": "14200.0",
+      "reserveB": "23368.139177895275456253"
+    },
+    "escalated_to_human": false,
+    "subtasks": [],
+    "task_id": "bafyreihw37uwrympm7x5g74l6upbdaxp2xjllnlmtjpmdq4jyh62nd2wii"
+  },
+  {
+    "parent_task": "bafyreicvwg4kn3wsom3s6dj3b7hom2zcy75u2f474klrbhlbm7guuqwcw4",
+    "assigned_to": "12D3KooWGYxEFJyKMAywp265iNZnqCKjj3FeFSHzmny9cjWD6BAp",
+    "workflow": "monitor-pool",
+    "status": "completed",
+    "explanation": "Fetched live pool reserves from Sepolia MiniDEX contract",
+    "timestamp": 1777613908792,
+    "inputs": {
+      "contract": "0x37b18fA954Fa516eE60f666A01A36AFCF6A59650",
+      "network": "sepolia"
+    },
+    "outputs": {
+      "reserveA": "14200.0",
+      "reserveB": "23368.139177895275456253"
+    },
+    "escalated_to_human": false,
+    "subtasks": [],
+    "task_id": "bafyreif7kgkjuqkywb4nt6ft3bq3tu27lywpflbzebpjzivyymh5x5bpwu"
+  },
+  {
+    "parent_task": "bafyreicvwg4kn3wsom3s6dj3b7hom2zcy75u2f474klrbhlbm7guuqwcw4",
+    "assigned_to": "12D3KooWGYxEFJyKMAywp265iNZnqCKjj3FeFSHzmny9cjWD6BAp",
+    "workflow": "monitor-pool",
+    "status": "completed",
+    "explanation": "Fetched live pool reserves from Sepolia MiniDEX contract",
+    "timestamp": 1777613930157,
+    "inputs": {
+      "contract": "0x37b18fA954Fa516eE60f666A01A36AFCF6A59650",
+      "network": "sepolia"
+    },
+    "outputs": {
+      "reserveA": "14200.0",
+      "reserveB": "23368.139177895275456253"
+    },
+    "escalated_to_human": false,
+    "subtasks": [],
+    "task_id": "bafyreidr2x57ngrw46xkqxc6abzx425w5mf2xnhweioxjjscy5gaeu42e4"
+  },
+  {
+    "parent_task": "bafyreicvwg4kn3wsom3s6dj3b7hom2zcy75u2f474klrbhlbm7guuqwcw4",
+    "assigned_to": "12D3KooWGYxEFJyKMAywp265iNZnqCKjj3FeFSHzmny9cjWD6BAp",
+    "workflow": "monitor-pool",
+    "status": "completed",
+    "explanation": "Fetched live pool reserves from Sepolia MiniDEX contract",
+    "timestamp": 1777613942247,
+    "inputs": {
+      "contract": "0x37b18fA954Fa516eE60f666A01A36AFCF6A59650",
+      "network": "sepolia"
+    },
+    "outputs": {
+      "reserveA": "14200.0",
+      "reserveB": "23368.139177895275456253"
+    },
+    "escalated_to_human": false,
+    "subtasks": [],
+    "task_id": "bafyreib53t74opsy2dm7rdiylwwrfovocmbh5knwnwwda6irr6xq5xfaiu"
+  },
+  {
+    "parent_task": "bafyreicvwg4kn3wsom3s6dj3b7hom2zcy75u2f474klrbhlbm7guuqwcw4",
+    "assigned_to": "12D3KooWGYxEFJyKMAywp265iNZnqCKjj3FeFSHzmny9cjWD6BAp",
+    "workflow": "monitor-pool",
+    "status": "completed",
+    "explanation": "Fetched live pool reserves from Sepolia MiniDEX contract",
+    "timestamp": 1777613958640,
+    "inputs": {
+      "contract": "0x37b18fA954Fa516eE60f666A01A36AFCF6A59650",
+      "network": "sepolia"
+    },
+    "outputs": {
+      "reserveA": "14200.0",
+      "reserveB": "23368.139177895275456253"
+    },
+    "escalated_to_human": false,
+    "subtasks": [],
+    "task_id": "bafyreifzpgr54xruh3q2op2ehvdz3gkpoxk3xsqrqrlkxkoet6rutbgmtq"
+  },
+  {
+    "parent_task": "bafyreicvwg4kn3wsom3s6dj3b7hom2zcy75u2f474klrbhlbm7guuqwcw4",
+    "assigned_to": "12D3KooWGYxEFJyKMAywp265iNZnqCKjj3FeFSHzmny9cjWD6BAp",
+    "workflow": "monitor-pool",
+    "status": "completed",
+    "explanation": "Fetched live pool reserves from Sepolia MiniDEX contract",
+    "timestamp": 1777613972675,
+    "inputs": {
+      "contract": "0x37b18fA954Fa516eE60f666A01A36AFCF6A59650",
+      "network": "sepolia"
+    },
+    "outputs": {
+      "reserveA": "14200.0",
+      "reserveB": "23368.139177895275456253"
+    },
+    "escalated_to_human": false,
+    "subtasks": [],
+    "task_id": "bafyreihh4abshvjclopled4bs3nfuen3chawatt3sgf5f7odb5jdnktf4i"
+  },
+  {
+    "parent_task": "bafyreicvwg4kn3wsom3s6dj3b7hom2zcy75u2f474klrbhlbm7guuqwcw4",
+    "assigned_to": "12D3KooWGYxEFJyKMAywp265iNZnqCKjj3FeFSHzmny9cjWD6BAp",
+    "workflow": "monitor-pool",
+    "status": "completed",
+    "explanation": "Fetched live pool reserves from Sepolia MiniDEX contract",
+    "timestamp": 1777613980396,
+    "inputs": {
+      "contract": "0x37b18fA954Fa516eE60f666A01A36AFCF6A59650",
+      "network": "sepolia"
+    },
+    "outputs": {
+      "reserveA": "14200.0",
+      "reserveB": "23368.139177895275456253"
+    },
+    "escalated_to_human": false,
+    "subtasks": [],
+    "task_id": "bafyreib6s4rhxur62qp2bjv336uzojdn66uy6el7oknahkelowupstnrny"
+  },
+  {
+    "parent_task": "bafyreicvwg4kn3wsom3s6dj3b7hom2zcy75u2f474klrbhlbm7guuqwcw4",
+    "assigned_to": "12D3KooWGYxEFJyKMAywp265iNZnqCKjj3FeFSHzmny9cjWD6BAp",
+    "workflow": "monitor-pool",
+    "status": "completed",
+    "explanation": "Fetched live pool reserves from Sepolia MiniDEX contract",
+    "timestamp": 1777614000212,
+    "inputs": {
+      "contract": "0x37b18fA954Fa516eE60f666A01A36AFCF6A59650",
+      "network": "sepolia"
+    },
+    "outputs": {
+      "reserveA": "14200.0",
+      "reserveB": "23368.139177895275456253"
+    },
+    "escalated_to_human": false,
+    "subtasks": [],
+    "task_id": "bafyreifcs6y3dka34hq774kcuhonheqkfdd2gzdsamsumlj47pqf2tgvpi"
+  },
+  {
+    "parent_task": "bafyreicvwg4kn3wsom3s6dj3b7hom2zcy75u2f474klrbhlbm7guuqwcw4",
+    "assigned_to": "12D3KooWGYxEFJyKMAywp265iNZnqCKjj3FeFSHzmny9cjWD6BAp",
+    "workflow": "monitor-pool",
+    "status": "completed",
+    "explanation": "Fetched live pool reserves from Sepolia MiniDEX contract",
+    "timestamp": 1777614008587,
+    "inputs": {
+      "contract": "0x37b18fA954Fa516eE60f666A01A36AFCF6A59650",
+      "network": "sepolia"
+    },
+    "outputs": {
+      "reserveA": "14200.0",
+      "reserveB": "23368.139177895275456253"
+    },
+    "escalated_to_human": false,
+    "subtasks": [],
+    "task_id": "bafyreigtbxjlflgf6pldokpmtlqydooqvsnvgug3urrwkqn2pwj6y3eqvu"
+  },
+  {
+    "parent_task": "bafyreicvwg4kn3wsom3s6dj3b7hom2zcy75u2f474klrbhlbm7guuqwcw4",
+    "assigned_to": "12D3KooWGYxEFJyKMAywp265iNZnqCKjj3FeFSHzmny9cjWD6BAp",
+    "workflow": "monitor-pool",
+    "status": "completed",
+    "explanation": "Fetched live pool reserves from Sepolia MiniDEX contract",
+    "timestamp": 1777614028720,
+    "inputs": {
+      "contract": "0x37b18fA954Fa516eE60f666A01A36AFCF6A59650",
+      "network": "sepolia"
+    },
+    "outputs": {
+      "reserveA": "14200.0",
+      "reserveB": "23368.139177895275456253"
+    },
+    "escalated_to_human": false,
+    "subtasks": [],
+    "task_id": "bafyreif4unvw7olw2txat6jowq5napf3qne7ty35pgh4tadziubpot7gqe"
+  },
+  {
+    "parent_task": "bafyreicvwg4kn3wsom3s6dj3b7hom2zcy75u2f474klrbhlbm7guuqwcw4",
+    "assigned_to": "12D3KooWGYxEFJyKMAywp265iNZnqCKjj3FeFSHzmny9cjWD6BAp",
+    "workflow": "monitor-pool",
+    "status": "completed",
+    "explanation": "Fetched live pool reserves from Sepolia MiniDEX contract",
+    "timestamp": 1777614038932,
+    "inputs": {
+      "contract": "0x37b18fA954Fa516eE60f666A01A36AFCF6A59650",
+      "network": "sepolia"
+    },
+    "outputs": {
+      "reserveA": "14200.0",
+      "reserveB": "23368.139177895275456253"
+    },
+    "escalated_to_human": false,
+    "subtasks": [],
+    "task_id": "bafyreidqiz44qsrxd3xqfuheauniqylj5ajki6zu3v6fvhb7cjqffrda3y"
   }
 ]
