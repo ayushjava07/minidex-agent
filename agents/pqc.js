@@ -123,10 +123,15 @@ export function generateKeys(role) {
 export function encryptMessage(targetRole, message) {
     // take the public key of the target agent from the shared public keys file
     const publicKey = getPublicKey(targetRole)
+    
     if (!publicKey) {
-        throw new Error(`[PQC] Public key not found for [${targetRole}]`)
+        // Encrypt karne ki koshish mat karo
+        // Sirf warn karo
+        console.log(`[PQC] Warning: No public key for [${targetRole}] - skipping encryption`)
+        return null
     }
 
+    try {
     // Step 1: ML-KEM encapsulate
     // sharedSecret generation + cipherText creation
     // cipherText = lock sharedSecret with target's public key, yehi bhejna hai target ko
@@ -148,6 +153,10 @@ export function encryptMessage(targetRole, message) {
     console.log(`  IV                : ${result.iv}`)
 
     return result
+    } catch(err) {
+        console.log(`[PQC] Encryption failed: ${err.message}`)
+        return null
+    }
 }
 
 // ─── PUBLIC: Decrypt message ───────────────────────────────────────────────────
