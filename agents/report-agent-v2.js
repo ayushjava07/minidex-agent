@@ -13,13 +13,14 @@ let backupMonitoring = null
 let rootTaskCID = null
 
 async function monitorPool(node, coveredBy) {
+    let taskCID = null 
     try {
         const provider = new ethers.JsonRpcProvider(RPC_URL)
         const dex      = new ethers.Contract(DEX_ADDRESS, DEX_ABI, provider)
         const [resA, resB] = await dex.getReserves()
 
         // IPLD task log
-        const taskCID = await logTask({
+         taskCID = await logTask({
             peerId:      node.peerId.toString(),
             agent:       coveredBy,
             workflow:    'backup-pool-monitor',
