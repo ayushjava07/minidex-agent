@@ -1,6 +1,6 @@
 import { createAgentNode, publishMessage, subscribeToTopic } from './network.js'
 import { logTask, logExecution, printDAG } from './ipld-logger.js'
-import { generateKeys } from './pqc.js'
+import { generateKeys, decryptMessage } from './pqc.js'
 import { ethers } from 'ethers'
 import 'dotenv/config'
 
@@ -16,15 +16,14 @@ async function monitorPool(node) {
         const dex      = new ethers.Contract(DEX_ADDRESS, DEX_ABI, provider)
         const [resA, resB] = await dex.getReserves()
 
-        // IPLD task log
         const taskCID = await logTask({
             peerId:      node.peerId.toString(),
             agent:       'monitor',
             workflow:    'monitor-pool',
             status:      'completed',
             explanation: 'Fetched live pool reserves from Sepolia MiniDEX contract',
-            inputs:  { contract: DEX_ADDRESS, network: 'sepolia' },
-            outputs: {
+            inputs:      { contract: DEX_ADDRESS, network: 'sepolia' },
+            outputs:     {
                 reserveA: ethers.formatEther(resA),
                 reserveB: ethers.formatEther(resB)
             },
@@ -44,7 +43,7 @@ async function monitorPool(node) {
         console.log('  ReserveB:', ethers.formatEther(resB))
         console.log('  Task CID:', taskCID)
 
-        // Low liquidity alert
+        // Low liquidity alert - Workflow 3
         const minReserve = ethers.parseEther("100")
         if (resA < minReserve || resB < minReserve) {
             console.log('[Monitor] ALERT: Low liquidity detected!')
@@ -55,7 +54,7 @@ async function monitorPool(node) {
                 workflow:    'low-liquidity-alert',
                 status:      'completed',
                 explanation: 'Pool liquidity dropped below threshold of 100 tokens',
-                inputs:  { threshold: '100', reserveA: ethers.formatEther(resA) },
+                inputs:      { threshold: '100', reserveA: ethers.formatEther(resA) },
                 parentCID:   taskCID,
                 escalate:    true
             })
@@ -86,35 +85,64 @@ async function main() {
 
     const node = await createAgentNode('monitor')
 
-    // PQC keys banaye
-    const myKeys = generateKeys('monitor')
+    generateKeys('monitor')
     console.log('[PQC] Monitor agent keys ready')
 
-    // Root task ko log kare
     rootTaskCID = await logTask({
         peerId:      node.peerId.toString(),
         agent:       'monitor',
         workflow:    'monitor-agent-startup',
         status:      'in-progress',
         explanation: 'Monitor agent started - watching pool reserves on Sepolia',
-        inputs:  { role: 'monitor', contract: DEX_ADDRESS }
+        inputs:      { role: 'monitor', contract: DEX_ADDRESS }
     })
 
+    
     subscribeToTopic(node, 'heartbeat', (data) => {
         console.log(`[Monitor] Heartbeat from ${data.agent}: ${data.status}`)
+    })
+
+    subscribeToTopic(node, 'agent-tasks', async (data) => {
+        console.log(`[Monitor] Task received: ${data.type}`)
+
+        if (data.encryptedMessage && data.cipherText && data.iv) {
+            try {
+                const plaintext = decryptMessage(
+                    'monitor',
+                    data.cipherText,
+                    data.encryptedMessage,
+                    data.iv
+                )
+                const message = JSON.parse(plaintext)
+                console.log('[PQC] Decrypted message from deploy:')
+                console.log('  Type     :', message.type)
+                console.log('  Contracts:', message.contracts)
+
+                await logTask({
+                    peerId:      node.peerId.toString(),
+                    agent:       'monitor',
+                    workflow:    'pqc-message-received',
+                    status:      'completed',
+                    explanation: 'Received and decrypted PQC message from deploy agent using ML-KEM-768 + AES-256-CBC',
+                    inputs:      { algorithm: 'ML-KEM-768 + AES-256-CBC', from: 'deploy' },
+                    outputs:     { messageType: message.type },
+                    parentCID:   rootTaskCID
+                })
+
+            } catch(err) {
+                console.log('[PQC] Decrypt failed:', err.message)
+            }
+        }
     })
 
     console.log('[Monitor] Waiting 15 seconds for all agents...')
     await new Promise(resolve => setTimeout(resolve, 15000))
     console.log('[Monitor] Active - starting pool monitoring')
 
-    // Turant pool check kare
     await monitorPool(node)
 
-    // Har 10 second
     setInterval(() => monitorPool(node), 10000)
 
-    // Heartbeat bheje
     setInterval(async () => {
         await publishMessage(node, 'heartbeat', {
             agent:     'monitor',

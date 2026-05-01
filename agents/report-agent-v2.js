@@ -48,10 +48,18 @@ async function monitorPool(node, coveredBy) {
 
     } catch (err) {
         console.log('[Report] Pool error:', err.message)
-
+        const failedTaskCID = taskCID || await logTask({
+            peerId:      node.peerId.toString(),
+            agent:       coveredBy,
+            workflow:    'backup-pool-monitor',
+            status:      'failed',
+            explanation: 'Report agent backup pool check failed - RPC timeout or network issue',
+            inputs:      { contract: DEX_ADDRESS, network: 'sepolia' },
+            parentCID:   rootTaskCID
+        })
         await logExecution({
             peerId:  node.peerId.toString(),
-            taskCID: rootTaskCID || 'unknown',
+            taskCID: failedTaskCID,
             event:   'backup_pool_check_failed',
             agent:   coveredBy,
             outcome: 'failed'
@@ -105,7 +113,7 @@ async function main() {
         console.log(`[Report] Task received: ${data.type}`)
 
         // Agar encrypted message aaya
-        if (data.encryptedMessage) {
+        if (data.encryptedMessage && data.targetRole === 'report') {
             try {
                 const plaintext = decryptMessage(
                     'report',

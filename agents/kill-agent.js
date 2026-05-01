@@ -1,12 +1,13 @@
-import fs from "fs";
+import fs from 'fs'
+import path from 'path'
 
-const registry = JSON.parse(fs.readFileSync("./agents/registry.json"));
+const PEERS_FILE = path.join(process.cwd(), 'agents', 'peers.json')
+const agentToKill = process.argv[2] || 'monitor'
 
-// Kill monitor agent
-const monitor = registry.agents.find(a => a.id=== "monitor-1");
-monitor.status= "failed";
-
-fs.writeFileSync("./agents/registry.json",JSON.stringify(registry,null,2));
-
-console.log("💀 monitor-1 marked as FAILED");
-console.log("🔄 Run report-agent.js to see fault tolerance");
+console.log(`Simulating failure of [${agentToKill}] agent`)
+console.log('In real system: kill the process')
+console.log('For demo: stop the terminal running that agent')
+console.log('')
+console.log('Watch report agent terminal for:')
+console.log(`  [Report] ALERT: ${agentToKill} DOWN for 30s`)
+console.log('  [Report] Taking over monitor tasks...')
