@@ -1,14 +1,14 @@
 {
   "monitor": {
-    "libp2pAddr": "/ip4/127.0.0.1/tcp/4002/p2p/12D3KooWE2nUHW8hPtnjZ6f6rMDPwWssZTgWPsXnGQuYAkQHknEN",
+    "libp2pAddr": "/ip4/127.0.0.1/tcp/4002/p2p/12D3KooWGYxEFJyKMAywp265iNZnqCKjj3FeFSHzmny9cjWD6BAp",
     "msgPort": 5002
   },
   "deploy": {
-    "libp2pAddr": "/ip4/127.0.0.1/tcp/4001/p2p/12D3KooWKYYRry9qtFadiJzZptxyA8jZ2ZEazCPQXTay22EruszS",
+    "libp2pAddr": "/ip4/127.0.0.1/tcp/4001/p2p/12D3KooWN7HsAUC6yGMpJps8hofTiTeUFEGwT5p4TdgDNf3hAaZm",
     "msgPort": 5001
   },
   "report": {
-    "libp2pAddr": "/ip4/127.0.0.1/tcp/4003/p2p/12D3KooWDtAdg7GTqsk8TRJU7wu4B8NcZynCrapbZFWvfSrhwYQd",
+    "libp2pAddr": "/ip4/127.0.0.1/tcp/4003/p2p/12D3KooWAL3363UH7RW11okA5sVcLPdJpNKi9PJe1d7BwE1uRxFA",
     "msgPort": 5003
   }
 }
