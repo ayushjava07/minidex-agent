@@ -1,6 +1,6 @@
-# 🚀 MiniDEX Agent - ATOS Project
+# 🚀 MiniDEX Agent — ATOS Project
 
-## 🌐 Autonomous Token Orchestration System
+## Autonomous Token Orchestration System
 
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](https://choosealicense.com/licenses/mit/)
 [![Network](https://img.shields.io/badge/Network-Sepolia-blue.svg)]()
@@ -10,22 +10,40 @@
 
 ## 🔗 Live Links
 
-* 🌍 Frontend: https://minidex-agent.vercel.app
+* 🌐 Frontend: https://minidex-agent.vercel.app
 * 💻 GitHub: https://github.com/ayushjava07/minidex-agent
-* 📚 Docs: https://www.notion.so/DAY2-MINIDEX-AGENT-350a3675be7d8058bce4f3c0cb1eeae5
+* 🎥 Demo Video: https://vimeo.com/1187424544
+* 📄 Docs: https://www.notion.so/DAY2-MINIDEX-AGENT-350a3675be7d8058bce4f3c0cb1eeae5
 
 ---
 
-## 📋 Overview
+## ✅ Acceptance Criteria Status
 
-**ATOS (Autonomous Token Orchestration System)** is a decentralized system combining:
+| Requirement                  | Status         | Proof                     |
+| ---------------------------- | -------------- | ------------------------- |
+| ERC-20 standard tests        | ⚙️ In Progress | `test/` folder            |
+| ERC-20 security checks       | ⚙️ In Progress | `test/` folder            |
+| Live DEX with liquidity pool | ✅ Done         | Sepolia + frontend        |
+| Peer discovery               | ✅ Done         | libp2p Peer IDs           |
+| Task distribution            | ✅ Done         | 3 workflows per agent     |
+| Fault tolerance              | ✅ Done         | heartbeat + auto-takeover |
+| 3 workflows per agent        | ✅ Done         | deploy / monitor / report |
+| PQC prototype                | ✅ Done         | ML-KEM-768 + AES-256      |
+| CID usage                    | ✅ Done         | every workflow state      |
+| IPLD schemas                 | ✅ Done         | `ipld/schema.ipldsch`     |
+| Documentation                | ✅ Done         | this README               |
 
-* ERC-20 token lifecycle
-* AMM-based DEX (MiniDEX)
-* Multi-agent coordination
-* Post-Quantum Cryptography (PQC)
-* IPLD-based state management
-* Content-addressed storage via CID
+---
+
+## 📌 Overview
+
+ATOS is a **decentralized autonomous system** combining:
+
+* ⚡ ERC-20 token lifecycle on Sepolia
+* 🔄 AMM-based DEX (MiniDEX)
+* 🤖 Multi-agent coordination (libp2p)
+* 🔐 Post-Quantum Cryptography (PQC)
+* 📦 IPLD-based content-addressed state
 
 ---
 
@@ -35,67 +53,26 @@
 Frontend (Vercel)
         │
         ▼
-Ethereum Sepolia
- ├── TokenA
- ├── TokenB
- └── MiniDEX (x*y=k)
+Ethereum Sepolia (TokenA, TokenB, MiniDEX)
         │
         ▼
-Multi-Agent System
- ├── Deploy Agent
- ├── Monitor Agent
- ├── Report Agent
+Multi-Agent System (libp2p)
         │
         ▼
-PQC Encryption + CID + IPLD
+PQC + IPLD + CID Layer
 ```
 
 ---
 
-## 📁 Project Structure
+## 📜 Smart Contracts (Sepolia)
 
-```
-minidex-agent/
-├── contracts/
-│   ├── TokenA.sol
-│   ├── TokenB.sol
-│   └── MiniDEX.sol
-├── agents/
-│   ├── deploy-agent.js
-│   ├── monitor-agent.js
-│   ├── report-agent.js
-│   ├── kill-agent.js
-│   ├── pqc.js
-│   ├── cid-helper.js
-│   └── registry.json
-├── ipld/
-│   └── schema.ipldsch
-├── ignition/
-│   └── modules/
-│       └── Deploy.js
-├── scripts/
-│   └── addLiquidity.js
-├── frontend/
-├── hardhat.config.js
-├── package.json
-└── README.md
-```
+| Contract | Address                                      |
+| -------- | -------------------------------------------- |
+| TokenA   | `0xF7a7152a2A939e21e0B0aBb34F12e2B260c5A5ED` |
+| TokenB   | `0x95C5F14106ab4d1dc0cFC9326C287B702619A761` |
+| MiniDEX  | `0x37b18fA954Fa516eE60f666A01A36AFCF6A59650` |
 
----
-
-## 🧾 Smart Contracts
-
-### 🔹 TokenA & TokenB
-
-* ERC-20 tokens
-* 1,000,000 initial supply
-* Deployed on Sepolia
-
-### 🔹 MiniDEX
-
-* AMM formula: `x * y = k`
-
-Functions:
+### ⚙️ MiniDEX Functions
 
 * `addLiquidity(amountA, amountB)`
 * `swapAforB(amountA)`
@@ -107,74 +84,82 @@ Functions:
 
 ## 🤖 Multi-Agent System
 
-### 🔹 Deploy Agent
+### 🔄 How It Works
 
-* Deploy contracts
-* Initialize liquidity
-* Register peers
+* Each agent runs independently with a **libp2p Peer ID**
+* Communication via protocol: `/atos/1.0.0`
+* Heartbeat every **10 seconds**
+* Auto failover within **30 seconds**
 
-### 🔹 Monitor Agent
+---
 
-* Monitor reserves
-* Heartbeat system
-* PQC alerts
+### 🧠 Agents
 
-### 🔹 Report Agent
+#### 🚀 Deploy Agent (port 5001)
 
-* Generate reports
+* Deploy state log (CID)
+* PQC encrypted messaging
+* Peer registration
+
+#### 📊 Monitor Agent (port 5002)
+
+* Pool reserve monitoring
+* Heartbeat broadcast
+* Low liquidity alerts
+
+#### 📑 Report Agent (port 5003)
+
+* System reports
 * Fault detection
-* System summary
+* Final summaries with CID
 
-### ⚡ Fault Tolerance
+---
+
+### ⚡ Fault Tolerance Demo
 
 ```bash
-node agents/kill-agent.js
+# Run agents
+node agents/deploy-agent.js
+node agents/monitor-agent.js
 node agents/report-agent.js
+
+# Kill monitor agent
+node agents/kill-agent.js
+```
+
+👉 Report agent auto-detects failure and takes over.
+
+---
+
+## 🔐 Post-Quantum Cryptography
+
+Using **ML-KEM-768 (NIST Standard)**
+
+* Key exchange via KEM
+* Shared secret → AES-256-GCM encryption
+* Secure agent communication
+
+---
+
+## 🌐 IPLD Task DAG
+
+Each workflow produces **CID-linked nodes**
+
+```
+ExecutionLog3
+   │
+ExecutionLog2
+   │
+ExecutionLog1
+   │
+Task DAG → Agent Identity
 ```
 
 ---
 
-## 🔐 Post-Quantum Cryptography (PQC)
+## ⚙️ Setup
 
-Using **ML-KEM-768 (NIST 2024)**
-
-```js
-const { publicKey, secretKey } = generateKeys();
-const { cipherText } = encryptMessage(publicKey, message);
-const secret = decryptMessage(secretKey, cipherText);
-```
-
----
-
-## 📦 CID / Content Addressing
-
-```js
-const cid = await generateCID(agentState);
-```
-
-* Immutable state
-* Tamper-proof logs
-* Content-based addressing
-
----
-
-## 📊 IPLD Schema
-
-```
-type AgentState struct {
-  id String
-  role String
-  status String
-  lastHeartbeat Int
-  workflow String
-}
-```
-
----
-
-## ⚙️ Setup & Installation
-
-### Prerequisites
+### 📦 Prerequisites
 
 * Node.js v18+
 * MetaMask
@@ -182,7 +167,7 @@ type AgentState struct {
 
 ---
 
-### Install
+### 📥 Install
 
 ```bash
 git clone https://github.com/ayushjava07/minidex-agent
@@ -192,7 +177,7 @@ npm install
 
 ---
 
-### Environment Variables
+### 🔑 Environment Variables
 
 ```bash
 npx hardhat vars set INFURA_API_KEY
@@ -202,7 +187,7 @@ npx hardhat vars set ETHERSCAN_API_KEY
 
 ---
 
-### Deploy Contracts
+### 🚀 Deploy Contracts
 
 ```bash
 npx hardhat ignition deploy ./ignition/modules/Deploy.js --network sepolia
@@ -210,7 +195,7 @@ npx hardhat ignition deploy ./ignition/modules/Deploy.js --network sepolia
 
 ---
 
-### Add Liquidity
+### 💧 Add Liquidity
 
 ```bash
 node scripts/addLiquidity.js
@@ -218,7 +203,7 @@ node scripts/addLiquidity.js
 
 ---
 
-## ▶️ Run Agents
+### ▶️ Run Agents
 
 ```bash
 node agents/deploy-agent.js
@@ -228,60 +213,91 @@ node agents/report-agent.js
 
 ---
 
-## 🖥️ Frontend
+### 🧪 Run Tests
 
 ```bash
-cd frontend
-npm install
-npm run dev
+npx hardhat test
 ```
-
-Live: https://minidex-agent.vercel.app
 
 ---
 
-## 🚀 Features
+## 👀 Example Output
+
+```
+[DEPLOY] Workflow complete — CID: bafy...
+[MONITOR] ReserveA: 1000 TKA
+[REPORT] All agents healthy
+
+# After failure
+
+[REPORT] Monitor agent offline — takeover initiated
+```
+
+---
+
+## 💻 Frontend
+
+🔗 https://minidex-agent.vercel.app
+
+Features:
 
 * MetaMask connect
 * Token swap
 * Liquidity management
-* Pool analytics
+* Pool stats (live)
 * Agent dashboard
 
 ---
 
-## 📈 Roadmap
+## 📂 Project Structure
 
-* libp2p peer discovery
-* Dockerized agents
-* Governance agent
-* Analytics system
-* CI/CD pipeline
-* CEX integration
+```
+minidex-agent/
+├── contracts/
+├── agents/
+├── ipld/
+├── test/
+├── scripts/
+├── frontend/
+├── docs/
+└── README.md
+```
 
 ---
 
-## 🛠 Tech Stack
+## 🛠️ Tech Stack
 
-| Layer      | Tech              |
-| ---------- | ----------------- |
-| Contracts  | Solidity, Hardhat |
-| Blockchain | Ethereum Sepolia  |
-| Frontend   | React, Vite       |
-| Agents     | Node.js           |
-| Security   | PQC               |
-| Storage    | CID, IPLD         |
-| Deployment | Vercel            |
+| Layer           | Technology          |
+| --------------- | ------------------- |
+| Smart Contracts | Solidity, Hardhat   |
+| Blockchain      | Ethereum Sepolia    |
+| Agents          | Node.js             |
+| Networking      | libp2p              |
+| Security        | ML-KEM-768, AES-256 |
+| Data            | IPLD, CID           |
+| Frontend        | React, Vite         |
+| Deployment      | Vercel              |
+
+---
+
+## 🗺️ Roadmap
+
+* Kademlia DHT peer discovery
+* Dockerized agents
+* Liquidity Manager Agent
+* Analytics Agent
+* Uniswap V3 integration
+* CI/CD pipeline
 
 ---
 
 ## 👨‍💻 Author
 
 **Ayush Kumar**
-GitHub: https://github.com/ayushjava07
+🔗 https://github.com/ayushjava07
 
 ---
 
 ## 📄 License
 
-MIT License
+MIT
