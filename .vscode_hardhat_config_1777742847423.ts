@@ -1,7 +1,10 @@
-import "@nomicfoundation/hardhat-toolbox";
+import hardhatToolboxViemPlugin from "@nomicfoundation/hardhat-toolbox-viem";
+import "@nomicfoundation/hardhat-ethers";
+import "@nomicfoundation/hardhat-chai-matchers";
 import { configVariable, defineConfig } from "hardhat/config";
 
 export default defineConfig({
+  // plugins: [hardhatToolboxViemPlugin], // hardhat-ethers is automatically loaded when imported
   solidity: {
     profiles: {
       default: {

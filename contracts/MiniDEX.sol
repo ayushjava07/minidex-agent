@@ -26,28 +26,30 @@ contract MiniDEX {
         emit LiquidityAdded(amountA, amountB);
     }
 
-    // Swap A for B
-    function swapAforB(uint amountA) external {
-        require(amountA > 0, "Amount must be > 0");
-        uint amountB = getAmountOut(amountA, reserveA, reserveB);
-        require(amountB > 0, "Insufficient output");
-        tokenA.transferFrom(msg.sender, address(this), amountA);
-        tokenB.transfer(msg.sender, amountB);
-        reserveA += amountA;
-        reserveB -= amountB;
-        emit Swapped(msg.sender, amountA, amountB);
-    }
+    // Swap tokens
+    function swap(address tokenIn, uint256 amountIn) external {
+        require(amountIn > 0, "Amount must be > 0");
+        require(tokenIn == address(tokenA) || tokenIn == address(tokenB), "Invalid token");
 
-    // Swap B for A
-    function swapBforA(uint amountB) external {
-        require(amountB > 0, "Amount must be > 0");
-        uint amountA = getAmountOut(amountB, reserveB, reserveA);
-        require(amountA > 0, "Insufficient output");
-        tokenB.transferFrom(msg.sender, address(this), amountB);
-        tokenA.transfer(msg.sender, amountA);
-        reserveB += amountB;
-        reserveA -= amountA;
-        emit Swapped(msg.sender, amountB, amountA);
+        bool isTokenA = tokenIn == address(tokenA);
+        (IERC20 tokenFrom, IERC20 tokenTo) = isTokenA ? (tokenA, tokenB) : (tokenB, tokenA);
+        (uint256 reserveFrom, uint256 reserveTo) = isTokenA ? (reserveA, reserveB) : (reserveB, reserveA);
+
+        uint256 amountOut = getAmountOut(amountIn, reserveFrom, reserveTo);
+        require(amountOut > 0, "Insufficient output");
+
+        tokenFrom.transferFrom(msg.sender, address(this), amountIn);
+        tokenTo.transfer(msg.sender, amountOut);
+
+        if (isTokenA) {
+            reserveA += amountIn;
+            reserveB -= amountOut;
+        } else {
+            reserveB += amountIn;
+            reserveA -= amountOut;
+        }
+        
+        emit Swapped(msg.sender, amountIn, amountOut);
     }
 
     // Remove Liquidity
