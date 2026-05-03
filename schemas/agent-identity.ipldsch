@@ -1,0 +1,26 @@
+# ATOS — Agent Identity Schema
+# Represents a single agent's cryptographic and network identity
+
+type AgentIdentity struct {
+    peerId          String        # libp2p PeerID
+    role            AgentRole
+    status          AgentStatus
+    multiaddr       String        # full multiaddr
+    publicKey       Bytes         # ML-KEM-768 public key
+    lastHeartbeat   Int           # unix ms
+    createdAt       Int           # unix ms
+    capabilities    [String]      # ["deploy", "pqc", "ipld"]
+} representation map
+
+type AgentRole enum {
+    | Deploy     ("deploy")
+    | Monitor    ("monitor")
+    | Report     ("report")
+} representation string
+
+type AgentStatus enum {
+    | Online      ("online")
+    | Degraded    ("degraded")
+    | Offline     ("offline")
+    | Recovering  ("recovering")
+} representation string
