@@ -5,6 +5,27 @@ import 'dotenv/config'
 
 let rootTaskCID = null
 
+// ── Wait for mDNS peer before starting workflows ──────
+async function waitForPeer(node, timeoutMs = 15000) {
+    if (node.getConnections().length > 0) {
+        console.log('[Network] Peers already connected')
+        return
+    }
+
+    return new Promise((resolve) => {
+        const timer = setTimeout(() => {
+            console.log('[Network] No peers found — running solo')
+            resolve()
+        }, timeoutMs)
+
+        node.addEventListener('peer:connect', () => {
+            clearTimeout(timer)
+            console.log('[Network] Peer connected — starting workflows')
+            resolve()
+        }, { once: true })
+    })
+}
+
 async function main() {
     console.log("=== Deploy Agent v2 ===")
 
@@ -18,7 +39,7 @@ async function main() {
         agent:       'deploy',
         workflow:    'deploy-agent-startup',
         status:      'in-progress',
-        explanation: 'Deploy agent started - managing contract deployments on Sepolia',
+        explanation: 'Deploy agent started',
         inputs:      { role: 'deploy', network: 'sepolia' }
     })
 
@@ -30,8 +51,9 @@ async function main() {
         console.log(`[Deploy] Task received: ${data.type}`)
     })
 
-    console.log('[Deploy] Waiting 15 seconds for all agents...')
-    await new Promise(resolve => setTimeout(resolve, 15000))
+    // ── Wait for mDNS — replaces hardcoded 15s sleep ──
+    console.log('[Deploy] Waiting for peers via mDNS...')
+    await waitForPeer(node, 15_000)
     console.log('[Deploy] Active')
 
     // Workflow 1: Contract deployment

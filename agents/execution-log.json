@@ -2728,5 +2728,95 @@
     "tx_hash": null,
     "gas_used": null,
     "log_id": "bafyreibjqnxyz5hkpd2vkx6wuoyk2ai5en4vhh5zfkdlptqdok3kfox3vm"
+  },
+  {
+    "task_ref": "bafyreidpsw3hfougyoblewvc7db5mrxvholtxzklsdazqcyae7bf4qyq4q",
+    "timestamp": 1777788887130,
+    "event": "contracts_deployed",
+    "agent": "12D3KooWRhADEEEL2URXt1kV65fKpWTLVhJRo9wUgMLPQHHeGCnB",
+    "outcome": "success",
+    "tx_hash": null,
+    "gas_used": null,
+    "log_id": "bafyreificwv5o6idenrcwl2kl6l76hhn64m5b5evi5pk3xx6i63wbbguzy"
+  },
+  {
+    "task_ref": "bafyreif3mrtsculidv2ef6kfq23d7dzqoof6uxjef65t6glruoqfrilaia",
+    "timestamp": 1777788887147,
+    "event": "pqc_message_sent",
+    "agent": "12D3KooWRhADEEEL2URXt1kV65fKpWTLVhJRo9wUgMLPQHHeGCnB",
+    "outcome": "success",
+    "tx_hash": null,
+    "gas_used": null,
+    "log_id": "bafyreiau7fm5krvzsdb65ial54rpawp4pbzwxbcltmh3ywpnuweaceh7pi"
+  },
+  {
+    "task_ref": "bafyreicbchzya54pjpqcgxndsd7amspcfvw7e3r7wfmyeyxqgl42a3usmi",
+    "timestamp": 1777788887150,
+    "event": "peer_registered",
+    "agent": "12D3KooWRhADEEEL2URXt1kV65fKpWTLVhJRo9wUgMLPQHHeGCnB",
+    "outcome": "success",
+    "tx_hash": null,
+    "gas_used": null,
+    "log_id": "bafyreif6tcgbbr2iyzlhuheogiozhzbb4v6t37fpmds6db3m3vs4iqa64y"
+  },
+  {
+    "task_ref": "bafyreigftskbcehjmqvh2bxyndeo6une2jpqbo6d7pf672pr4y5jzmtc7i",
+    "timestamp": 1777788902810,
+    "event": "pool_reserves_fetched",
+    "agent": "12D3KooW9wjewkVD9FkGdSC3YtPv7G1aCHfdQgeDYabEEg2DGkPF",
+    "outcome": "success",
+    "tx_hash": null,
+    "gas_used": null,
+    "log_id": "bafyreihaao4dq7sac77xdvnk3kbfpjhn6x76kgxicpiqqucepgvydprk4y"
+  },
+  {
+    "task_ref": "bafyreicgcrvwligbden6x2e3cwbw7ogjo3xe3mbyknn25k3j4wqnkedp7q",
+    "timestamp": 1777788917827,
+    "event": "pool_check_failed",
+    "agent": "12D3KooW9wjewkVD9FkGdSC3YtPv7G1aCHfdQgeDYabEEg2DGkPF",
+    "outcome": "failed",
+    "tx_hash": null,
+    "gas_used": null,
+    "log_id": "bafyreia2j2m6pyfexuqhtllzxppuarwy55j5zrwm77sf65o5skz2k2ie4i"
+  },
+  {
+    "task_ref": "bafyreichnd3mz7ioinkhzcq7ftrziise4ygvqnwcl5dyn6rig2z4g4lndm",
+    "timestamp": 1777788923184,
+    "event": "pool_reserves_fetched",
+    "agent": "12D3KooW9wjewkVD9FkGdSC3YtPv7G1aCHfdQgeDYabEEg2DGkPF",
+    "outcome": "success",
+    "tx_hash": null,
+    "gas_used": null,
+    "log_id": "bafyreig3kli6v6pjmszf6ywxwm7hj4a5j6gep5dgokx5piilm4xmpnh7le"
+  },
+  {
+    "task_ref": "bafyreihk5m2h766jrdkl5vi7aftmewdix4aqydydbctqohjr3p4ghljvs4",
+    "timestamp": 1777788934652,
+    "event": "pool_reserves_fetched",
+    "agent": "12D3KooW9wjewkVD9FkGdSC3YtPv7G1aCHfdQgeDYabEEg2DGkPF",
+    "outcome": "success",
+    "tx_hash": null,
+    "gas_used": null,
+    "log_id": "bafyreifgfoflfh3ao3obmaxm3igvmltclwwtl4micwjg6r5dxx7u25euaq"
+  },
+  {
+    "task_ref": "bafyreic2c5k4uomr5u7da56yaavd727d7jj5aqjmlkpi2ptacraz7amj34",
+    "timestamp": 1777788944892,
+    "event": "pool_reserves_fetched",
+    "agent": "12D3KooW9wjewkVD9FkGdSC3YtPv7G1aCHfdQgeDYabEEg2DGkPF",
+    "outcome": "success",
+    "tx_hash": null,
+    "gas_used": null,
+    "log_id": "bafyreiaocbjkooahjwwqmd4u5pmsula6bhvq5mlpdwjf527msi2d26icqy"
+  },
+  {
+    "task_ref": "bafyreib7hd2x6pfcrc3n2r7hqcsn7wx23ni54vo5lnxoydkp73iy5umm4q",
+    "timestamp": 1777788954543,
+    "event": "pool_reserves_fetched",
+    "agent": "12D3KooW9wjewkVD9FkGdSC3YtPv7G1aCHfdQgeDYabEEg2DGkPF",
+    "outcome": "success",
+    "tx_hash": null,
+    "gas_used": null,
+    "log_id": "bafyreiedhgtbrhkd55ylhxqb7nfmry57q5wav2g4f4wqhh4cagujjqwepq"
   }
 ]
