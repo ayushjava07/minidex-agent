@@ -235,6 +235,16 @@ npx hardhat vars set ETHERSCAN_API_KEY
 ```bash
 npx hardhat ignition deploy ./ignition/modules/Deploy.js --network sepolia
 ```
+
+---
+
+### 🧪 Run Tests
+
+```bash
+npx hardhat test
+```
+
+---
 | Suite         |  Tests | What Is Covered                               |
 | ------------- | -----: | --------------------------------------------- |
 | TokenA ERC-20 |     17 | Deploy, Transfer, Allowances, Edge Cases      |
@@ -258,20 +268,13 @@ node scripts/addLiquidity.js
 ### ▶️ Run Agents
 
 ```bash
-node agents/deploy-agent.js
-node agents/monitor-agent.js
-node agents/report-agent.js
+node agents/deploy-agent-v2.js
+node agents/monitor-agent-v2.js
+node agents/report-agent-v2.js
 ```
 
 ---
 
-### 🧪 Run Tests
-
-```bash
-npx hardhat test
-```
-
----
 
 ## 👀 Example Output
 
@@ -338,7 +341,6 @@ minidex-agent/
 ├── test/
 ├── scripts/
 ├── frontend/
-├── docs/
 └── README.md
 ```
 
