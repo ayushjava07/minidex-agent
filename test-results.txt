@@ -1,0 +1,128 @@
+
+
+  IPLD (InterPlanetary Linked Data)
+[IPLD] Task Node Created
+  CID         : bafyreig4ftsl2c2sfu64jxcvgqxqjzc5fcdkt4oixlomneib42bomrkq5q
+  Workflow    : DEPLOY
+  Assigned to : test-agent
+  Status      : PENDING
+  Explanation : Deploying TokenA
+    ✔ Should log a task and generate a valid CID
+[IPLD] Task Node Created
+  CID         : bafyreia3gc2ogg5bwxdy6qu4ncn4zawv4szst2fmsyssm5xw23jvhlgf6q
+  Workflow    : MONITOR
+  Assigned to : test-agent
+  Status      : SUCCESS
+  Explanation : 
+[IPLD] Integrity check for bafyreia3gc2ogg5...
+  Result: VALID - not tampered
+[IPLD] Integrity check for bafyreia3gc2ogg5...
+  Result: INVALID - data was modified
+    ✔ Should verify integrity of a logged task
+[IPLD] Execution Node Created
+  CID      : bafyreiezi5l5vow6nysa544tiavh2epzxw35fvcpb35kqhzae3yprwcv2m
+  Event    : CONTRACT_DEPLOYED
+  Agent    : deployer
+  Outcome  : success
+  Task ref : bafytesttaskcid
+  Tx Hash  : 0x123...
+    ✔ Should log an execution and link it to a task
+
+  MiniDEX
+    Deployment
+      ✔ Should store the correct token addresses
+      ✔ Should start with zero reserves
+    addLiquidity
+      ✔ Should increase reserves and emit event
+      ✔ Should fail if tokens are not approved
+    swap
+      ✔ Should swap TKNA for TKNB correctly
+      ✔ Should swap TKNB for TKNA correctly
+      ✔ Should maintain x*y=k invariant (ignoring rounding)
+      ✔ Should fail on zero amount swap
+      ✔ Should fail on invalid token address
+      ✔ Should demonstrate price impact (slippage)
+      ✔ Should give ~1:1 price for small swaps in 1:1 pool
+
+  PQC (Post-Quantum Cryptography)
+[PQC] Keys saved for [test-agent-1]
+[PQC] Public key shared for [test-agent-1]
+[PQC] New keys generated for [test-agent-1]
+[PQC] Public key size : 1184 bytes
+[PQC] Secret key size : 2400 bytes
+[PQC] Keys saved for [test-agent-2]
+[PQC] Public key shared for [test-agent-2]
+[PQC] New keys generated for [test-agent-2]
+[PQC] Public key size : 1184 bytes
+[PQC] Secret key size : 2400 bytes
+    ✔ Should generate keys for agents
+[PQC] Message encrypted for [test-agent-2]
+  ML-KEM cipherText : 2bb47fe30e02d22840f3...
+  AES encrypted     : 9c944b80382a9c8503d3...
+  IV                : 4adbeae3416365bb8939c8716f8745ce
+[PQC] Message decrypted by [test-agent-2]
+  Plaintext : Hello, this is a secret message!
+    ✔ Should encrypt and decrypt a message between two agents
+[PQC] Warning: No public key for [non-existent-role] - skipping encryption
+    ✔ Should fail to encrypt if target public key is missing
+[PQC] Message encrypted for [test-agent-2]
+  ML-KEM cipherText : 9722afc307d004d6f5ed...
+  AES encrypted     : 54875fd4d2203ab04c87...
+  IV                : 45b7a0bed9b4934dcc957e41a6e54466
+    ✔ Should fail to decrypt if secret key is missing
+
+  MiniDEX Security & Edge Cases
+    Liquidity Management
+      ✔ Should allow ANYONE to remove liquidity (Design Observation)
+      ✔ Should fail to remove more liquidity than available
+    Swap Edge Cases
+      ✔ Should handle extremely large swaps without draining reserves
+      ✔ Should handle multiple swaps correctly
+
+  TokenA
+    Deployment
+      ✔ Should set the right name
+      ✔ Should set the right symbol
+      ✔ Should assign the total supply to the owner
+      ✔ Should have 18 decimals
+    Transfer
+      ✔ Should transfer tokens between accounts
+      ✔ Should emit Transfer event
+      ✔ Should fail if sender doesn't have enough tokens
+      ✔ Should fail when transferring to zero address
+      ✔ Should allow zero amount transfer
+      ✔ Should transfer full balance
+      ✔ Should handle self-transfer
+    Allowances
+      ✔ Should set allowance and emit Approval event
+      ✔ Should overwrite allowance
+      ✔ Should transfer tokens via transferFrom
+      ✔ Should reduce allowance after transferFrom
+      ✔ Should fail transferFrom if allowance is exceeded
+      ✔ Should fail transferFrom with no approval
+
+  TokenB
+    Deployment
+      ✔ Should set the right name
+      ✔ Should set the right symbol
+      ✔ Should assign the total supply to the owner
+      ✔ Should have 18 decimals
+    Transfer
+      ✔ Should transfer tokens between accounts
+      ✔ Should emit Transfer event
+      ✔ Should fail if sender doesn't have enough tokens
+      ✔ Should fail when transferring to zero address
+      ✔ Should allow zero amount transfer
+      ✔ Should transfer full balance
+      ✔ Should handle self-transfer
+    Allowances
+      ✔ Should set allowance and emit Approval event
+      ✔ Should overwrite allowance
+      ✔ Should transfer tokens via transferFrom
+      ✔ Should reduce allowance after transferFrom
+      ✔ Should fail transferFrom if allowance is exceeded
+      ✔ Should fail transferFrom with no approval
+
+
+  56 passing (1s)
+
