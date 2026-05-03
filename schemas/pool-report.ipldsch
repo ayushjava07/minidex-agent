@@ -1,30 +1,25 @@
 # ATOS — Pool and Report Schemas
-# Extends existing agent-identity and task-dag schemas
 
 type PoolState struct {
     contractAddress  String
     reserveA         String
     reserveB         String
-    priceAinB        String         
     timestamp        Int
-    blockNumber      optional Int
 } representation map
 
 type Report struct {
     agentId          String
     agentRole        String
     poolState        PoolState
-    taskCid          &Task           
+    taskCid          &Task
     timestamp        Int
     summary          String
 } representation map
 
 type WorkflowState struct {
     workflowId       String
-    taskType         TaskType
     step             String
     status           TaskStatus
     assignedAgent    String
-    parentCid        optional &Task  
     timestamp        Int
 } representation map
