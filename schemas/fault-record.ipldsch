@@ -1,0 +1,27 @@
+# ATOS — Fault Record Schema
+# Created by Report agent on peer failure
+# Links recovery task via CID — full audit trail
+
+type FaultRecord struct {
+    failedAgent      String
+    failedRole       String
+    detectedBy       String
+    detectedAt       Int
+    lastHeartbeat    Int
+    silenceDuration  Int              # ms of silence before detection
+
+    fsmTransitions   [FaultTransition]
+
+    recoveredBy      optional String
+    recoveredAt      optional Int
+    recoveryTaskCid  optional &Task   # CID link to recovery task
+    totalDowntime    optional Int
+} representation map
+
+type FaultTransition struct {
+    from             String
+    to               String
+    reason           String
+    timestamp        Int
+    cidProof         optional String  # DAG node CID at this transition
+} representation map
