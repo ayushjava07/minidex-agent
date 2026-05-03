@@ -1,133 +1,140 @@
-import net from 'net'
-import fs from 'fs'
-import path from 'path'
-import { createLibp2p } from 'libp2p'
-import { tcp } from '@libp2p/tcp'
-import { noise } from '@chainsafe/libp2p-noise'
-import { mplex } from '@libp2p/mplex'
-import { identify } from '@libp2p/identify'
+// agents/network.js — NEW VERSION
+// Drops peers.json — uses mDNS for real discovery
 
+import { createLibp2p }  from 'libp2p'
+import { tcp }           from '@libp2p/tcp'
+import { noise }         from '@chainsafe/libp2p-noise'
+import { yamux }         from '@chainsafe/libp2p-yamux'
+import { identify }      from '@libp2p/identify'
+import { mdns }          from '@libp2p/mdns'
+import { pipe }          from 'it-pipe'
+import { toString }      from 'uint8arrays/to-string'
+import { fromString }    from 'uint8arrays/from-string'
+
+// ── Constants ────────────────────────────────────────
+const PROTOCOL        = '/atos/1.0.0'
+const AGENT_PORTS     = {
+    deploy:  4001,
+    monitor: 4002,
+    report:  4003
+}
+
+// ── Topic handlers — same API as before ──────────────
 const topicHandlers = new Map()
 
-const AGENT_PORTS = {
-    'deploy':  { libp2p: 4001, msg: 5001 },
-    'monitor': { libp2p: 4002, msg: 5002 },
-    'report':  { libp2p: 4003, msg: 5003 }
-}
+// ── Single exported node reference ───────────────────
+let globalNode = null
 
-const PEERS_FILE = path.join(process.cwd(), 'agents', 'peers.json')
-
-function savePeer(role, libp2pAddr, msgPort) {
-    let peers = {}
-    if (fs.existsSync(PEERS_FILE)) {
-        peers = JSON.parse(fs.readFileSync(PEERS_FILE, 'utf8'))
-    }
-    peers[role] = { libp2pAddr, msgPort }
-    fs.writeFileSync(PEERS_FILE, JSON.stringify(peers, null, 2))
-    console.log(`[Network] Saved address for [${role}]`)
-}
-
-function startMessageServer(role, msgPort) {
-    const server = net.createServer((socket) => {
-        let buffer = ''
-        socket.on('data', (data) => {
-            buffer += data.toString()
-            const lines = buffer.split('\n')
-            buffer = lines.pop()
-            lines.forEach(line => {
-                if (!line.trim()) return
-                try {
-                    const { topic, data: msgData } = JSON.parse(line)
-                    console.log(`[Network] Received on [${topic}]`)
-                    const handlers = topicHandlers.get(topic)
-                    if (handlers) {
-                        handlers.forEach(h => h(msgData))
-                    }
-                } catch(e) {}
-            })
-        })
-        socket.on('error', () => {})
-    })
-
-    server.listen(msgPort, '127.0.0.1', () => {
-        console.log(`[Network] Message server on port ${msgPort}`)
-    })
-
-    return server
-}
-
-function sendToPort(msgPort, payload) {
-    return new Promise((resolve) => {
-        const client = new net.Socket()
-        let done = false
-
-        client.connect(msgPort, '127.0.0.1', () => {
-            client.write(JSON.stringify(payload) + '\n')
-            client.destroy()
-            if (!done) { done = true; resolve(true) }
-        })
-
-        client.on('error', () => {
-            if (!done) { done = true; resolve(false) }
-        })
-
-        client.setTimeout(3000, () => {
-            client.destroy()
-            if (!done) { done = true; resolve(false) }
-        })
-    })
-}
-
+// ─────────────────────────────────────────────────────
 export async function createAgentNode(role) {
-    const ports = AGENT_PORTS[role]
-    if (!ports) throw new Error(`Unknown role: ${role}`)
+    const port = AGENT_PORTS[role]
+    if (!port) throw new Error(`Unknown role: ${role}`)
 
-    // libp2p node - peer identity ke liye
     const node = await createLibp2p({
         addresses: {
-            listen: [`/ip4/127.0.0.1/tcp/${ports.libp2p}`]
+            listen: [`/ip4/0.0.0.0/tcp/${port}`]
         },
-        transports: [tcp()],
+        transports:           [tcp()],
         connectionEncryption: [noise()],
-        streamMuxers: [mplex()],
-        services: { identify: identify() }
+        streamMuxers:         [yamux()],
+        services: {
+            identify: identify()
+        },
+        peerDiscovery: [
+            // mDNS — automatically finds agents on same machine/LAN
+            // No configuration needed — just works
+            mdns({
+                interval:   10_000,
+                serviceTag: 'atos-agent'   // all ATOS agents share this tag
+            })
+        ]
+    })
+
+    // ── Handle incoming ATOS protocol messages ────────
+    await node.handle(PROTOCOL, async ({ stream, connection }) => {
+        try {
+            const chunks = []
+            for await (const chunk of stream.source) {
+                chunks.push(chunk)
+            }
+            const raw     = chunks.map(c => toString(c)).join('')
+            const message = JSON.parse(raw)
+
+            console.log(`[Network] Received [${message.topic}] from [${message.from}]`)
+
+            const handlers = topicHandlers.get(message.topic)
+            if (handlers) {
+                handlers.forEach(h => h(message.data))
+            }
+        } catch (err) {
+            console.error(`[Network] Message parse error: ${err.message}`)
+        }
+    })
+
+    // ── Auto connect when peer discovered via mDNS ───
+    node.addEventListener('peer:discovery', async (evt) => {
+        const peerId = evt.detail.id.toString()
+        console.log(`[mDNS] Discovered peer: ${peerId.slice(0, 20)}...`)
+
+        try {
+            await node.dial(evt.detail.id)
+            console.log(`[mDNS] Connected to: ${peerId.slice(0, 20)}...`)
+        } catch {
+            // peer may not be ready yet — okay
+        }
+    })
+
+    node.addEventListener('peer:connect', (evt) => {
+        console.log(`[Network] Peer connected: ${evt.detail.toString().slice(0, 20)}...`)
+    })
+
+    node.addEventListener('peer:disconnect', (evt) => {
+        console.log(`[Network] Peer disconnected: ${evt.detail.toString().slice(0, 20)}...`)
     })
 
     await node.start()
-    node.role = role
 
-    const libp2pAddr = `/ip4/127.0.0.1/tcp/${ports.libp2p}/p2p/${node.peerId.toString()}`
-    
-    // Message server start karo
-    startMessageServer(role, ports.msg)
-    
-    // Address save karo
-    savePeer(role, libp2pAddr, ports.msg)
+    node.role = role
+    globalNode = node
 
     console.log(`[Network] Agent [${role}] started`)
-    console.log(`[Network] Peer ID: ${node.peerId.toString()}`)
-    console.log(`[Network] libp2p: ${libp2pAddr}`)
-    console.log(`[Network] Messaging port: ${ports.msg}`)
+    console.log(`[Network] Peer ID : ${node.peerId.toString()}`)
+    console.log(`[Network] Addr    : /ip4/0.0.0.0/tcp/${port}/p2p/${node.peerId}`)
+    console.log(`[Network] Discovery: mDNS active — waiting for peers...`)
 
     return node
 }
 
+// ─────────────────────────────────────────────────────
 export async function publishMessage(node, topic, message) {
-    if (!fs.existsSync(PEERS_FILE)) return
+    const connections = node.getConnections()
 
-    let peers = {}
-    try {
-        peers = JSON.parse(fs.readFileSync(PEERS_FILE, 'utf8'))
-    } catch(e) { return }
+    if (connections.length === 0) {
+        console.log(`[Network] No peers connected yet for [${topic}]`)
+        return
+    }
 
     let sent = 0
-    for (const [role, info] of Object.entries(peers)) {
-        if (role === node.role) continue
 
-        const ok = await sendToPort(info.msgPort, { topic, data: message })
-        if (ok) {
+    for (const conn of connections) {
+        try {
+            const stream  = await conn.newStream(PROTOCOL)
+            const payload = JSON.stringify({
+                topic,
+                data: message,
+                from: node.role,
+                ts:   Date.now()
+            })
+
+            await pipe(
+                [fromString(payload)],
+                stream
+            )
+
             sent++
-            console.log(`[Network] Sent [${topic}] to [${role}]`)
+            console.log(`[Network] Sent [${topic}] to ${conn.remotePeer.toString().slice(0, 20)}...`)
+        } catch {
+            // connection may have dropped
         }
     }
 
@@ -136,6 +143,7 @@ export async function publishMessage(node, topic, message) {
     }
 }
 
+// ─────────────────────────────────────────────────────
 export function subscribeToTopic(node, topic, handler) {
     if (!topicHandlers.has(topic)) {
         topicHandlers.set(topic, [])
