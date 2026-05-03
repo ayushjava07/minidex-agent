@@ -1,0 +1,32 @@
+# ATOS — Execution Log Schema
+# Records what happened when a task ran
+# Links back to parent Task via CID
+
+type ExecutionLog struct {
+    taskCid         &Task             # CID back-link to parent task
+    agentId         String
+    agentRole       String
+    action          String            # e.g. "deploy_token_a"
+    result          ExecutionResult
+    startedAt       Int
+    completedAt     Int
+    durationMs      Int
+
+    # on-chain evidence — only present for contract interactions
+    txHash          optional String
+    blockNumber     optional Int
+    gasUsed         optional Int
+    contractAddr    optional String
+
+    # off-chain evidence
+    errorMsg        optional String
+    outputCid       optional &Any     # CID of any output artifact
+} representation map
+
+type ExecutionResult enum {
+    | Success         ("success")
+    | Failure         ("failure")
+    | PartialSuccess  ("partial_success")
+    | Timeout         ("timeout")
+    | Skipped         ("skipped")
+} representation string
