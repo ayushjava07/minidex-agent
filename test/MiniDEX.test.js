@@ -151,14 +151,14 @@ describe("MiniDEX", function () {
       // Small swap: 1 TKNA
       const smallIn = ethers.parseEther("1");
       const smallOut = await dex.getAmountOut(smallIn, liqA, liqB);
-      const smallPrice = smallOut / smallIn; // ~2.0
 
       // Large swap: 500 TKNA (50% of reserveA)
       const largeIn = ethers.parseEther("500");
       const largeOut = await dex.getAmountOut(largeIn, liqA, liqB);
-      const largePrice = largeOut / largeIn; // (500*2000)/(1000+500) = 1,000,000 / 1500 = 666.6... / 500 = 1.33...
 
-      expect(largePrice).to.be.below(smallPrice);
+      // Compare prices: (smallOut / smallIn) > (largeOut / largeIn)
+      // Cross-multiply to avoid floating point issues: smallOut * largeIn > largeOut * smallIn
+      expect(smallOut * largeIn).to.be.above(largeOut * smallIn);
     });
 
     it("Should give ~1:1 price for small swaps in 1:1 pool", async function () {
