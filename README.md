@@ -21,8 +21,8 @@
 
 | Requirement                  | Status         | Proof                     |
 | ---------------------------- | -------------- | ------------------------- |
-| ERC-20 standard tests        | ⚙️ In Progress | `test/` folder            |
-| ERC-20 security checks       | ⚙️ In Progress | `test/` folder            |
+| ERC-20 standard tests        | ✅  Done        |56 tests passing — npx hardhat test        |
+| ERC-20 security checks       | ✅ Done         |  Security.test.js — edge cases verified    |
 | Live DEX with liquidity pool | ✅ Done         | Sepolia + frontend        |
 | Peer discovery               | ✅ Done         | libp2p Peer IDs           |
 | Task distribution            | ✅ Done         | 3 workflows per agent     |
@@ -30,7 +30,7 @@
 | 3 workflows per agent        | ✅ Done         | deploy / monitor / report |
 | PQC prototype                | ✅ Done         | ML-KEM-768 + AES-256      |
 | CID usage                    | ✅ Done         | every workflow state      |
-| IPLD schemas                 | ✅ Done         | `ipld/schema.ipldsch`     |
+| IPLD schemas                 | ✅ Done         |  `schemas/` — 5 .ipldsch files    |
 | Documentation                | ✅ Done         | this README               |
 
 ---
@@ -50,16 +50,46 @@ ATOS is a **decentralized autonomous system** combining:
 ## 🏗️ Architecture
 
 ```
-Frontend (Vercel)
-        │
-        ▼
-Ethereum Sepolia (TokenA, TokenB, MiniDEX)
-        │
-        ▼
-Multi-Agent System (libp2p)
-        │
-        ▼
-PQC + IPLD + CID Layer
+┌─────────────────────────────────────────────┐
+│              ATOS Architecture              │
+│                                             │
+│  React Frontend (Vercel)                    │
+│       │                                     │
+│       │ MetaMask / RPC                      │
+│       ▼                                     │
+│  Ethereum Sepolia                           │
+│  ├── TokenA  (ERC-20)                       │
+│  ├── TokenB  (ERC-20)                       │
+│  └── MiniDEX (x*y=k AMM)                    │
+│       │                                     │
+│       │ ethers.js                           │
+│       ▼                                     │
+│  Multi-Agent Layer (/atos/1.0.0)            │
+│  ├── Deploy Agent  :5001                    │
+│  │   ├── Contract verification              │
+│  │   ├── Liquidity management               │
+│  │   └── PQC key exchange                   │
+│  ├── Monitor Agent :5002                    │
+│  │   ├── Pool surveillance                  │
+│  │   ├── Price deviation alerts             │
+│  │   └── Heartbeat broadcast (10s)          │
+│  └── Report Agent  :5003                    │
+│      ├── Fault detection (30s timeout)      │
+│      ├── FSM: HEALTHY→DEGRADED→FAILED       │
+│      └── Backup pool monitoring             │
+│       │                                     │
+│       ▼                                     │
+│  Security Layer                             │
+│  ├── ML-KEM-768  (key encapsulation)        │
+│  └── AES-256-CBC (message encryption)       │
+│       │                                     │
+│       ▼                                     │
+│  Data Layer                                 │
+│  ├── IPLD DAG-CBOR (task encoding)          │
+│  ├── CID-linked task graphs                 │
+│  ├── Execution logs per workflow            │
+│  └── Fault records with FSM history         │
+└─────────────────────────────────────────────┘
 ```
 
 ---
@@ -141,21 +171,34 @@ Using **ML-KEM-768 (NIST Standard)**
 
 ---
 
-## 🌐 IPLD Task DAG
+## 📦 IPLD Implementation
 
-Each workflow produces **CID-linked nodes**
+Every agent workflow is recorded as a CID-linked DAG node.
 
-```
-ExecutionLog3
-   │
-ExecutionLog2
-   │
-ExecutionLog1
-   │
-Task DAG → Agent Identity
-```
+### Schema Files
+- `schemas/agent-identity.ipldsch` — agent network + crypto identity
+- `schemas/task-dag.ipldsch`       — CID-linked task graph
+- `schemas/execution-log.ipldsch`  — per-task execution record
+- `schemas/fault-record.ipldsch`   — fault + recovery audit trail
+- `schemas/pool-report.ipldsch`    — pool state + monitor reports
 
----
+### DAG Structure
+Task (CID) ──► ExecutionLog (CID) ──► Output (CID)
+     │
+     └──► ChildTask (CID) ──► ExecutionLog (CID)
+
+### Example Output
+[IPLD] Task Node Created
+  CID         : bafyreigdmqpykrgxyahtgqxjtqjy75hq...
+  Workflow    : deploy_token_a
+  Assigned to : 12D3KooWBmAwcd4PJNk...
+  Status      : success
+
+[IPLD] Execution Node Created
+  CID      : bafyreiabc123...
+  Event    : deploy_complete
+  Outcome  : success
+  Task ref : bafyreigdmqpykr...
 
 ## ⚙️ Setup
 
@@ -192,6 +235,15 @@ npx hardhat vars set ETHERSCAN_API_KEY
 ```bash
 npx hardhat ignition deploy ./ignition/modules/Deploy.js --network sepolia
 ```
+| Suite         |  Tests | What Is Covered                               |
+| ------------- | -----: | --------------------------------------------- |
+| TokenA ERC-20 |     17 | Deploy, Transfer, Allowances, Edge Cases      |
+| TokenB ERC-20 |     17 | Deploy, Transfer, Allowances, Edge Cases      |
+| MiniDEX AMM   |     11 | Liquidity, Swap, x*y=k Invariant, Slippage    |
+| PQC Module    |      4 | ML-KEM-768 Key Gen, AES-256 Encrypt/Decrypt   |
+| IPLD Logging  |      3 | CID Generation, DAG Linking, Tamper Detection |
+| Security      |      4 | Edge Cases, Reserve Exhaustion, Zero Amounts  |
+| **Total**     | **56** | **Full system coverage**                      |
 
 ---
 
@@ -234,6 +286,33 @@ npx hardhat test
 ```
 
 ---
+
+## 📊 Live IPLD DAG Output
+
+Running agents produce real CID-linked task graphs:
+
+```text
+[IPLD] DAG from root: bafyreiff4kfp6mp...
+└── [deploy-agent-startup] bafyreiff4kfp6mp... (in-progress)
+    ├── [contract-deployment] bafyreidpsw3hfou... (completed)
+    │   ├── exec: contracts_deployed → success
+    │   └── [pqc-encrypted-broadcast] bafyreif3mrtscul... (completed)
+    │       └── exec: pqc_message_sent → success
+    └── [peer-registration] bafyreicbchzya54... (completed)
+        └── exec: peer_registered → success
+```
+## 🌐 Peer Discovery — mDNS
+```
+Agents discover each other automatically via mDNS.
+No static configuration required.
+
+[Network] Agent [deploy] started
+[Network] Discovery: mDNS active — waiting for peers...
+
+[Network] Agent [monitor] started
+[mDNS] Discovered peer: 12D3KooWRhADEEEL2URX...
+[mDNS] Connected to: 12D3KooWRhADEEEL2URX...
+```
 
 ## 💻 Frontend
 
