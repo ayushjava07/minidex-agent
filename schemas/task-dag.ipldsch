@@ -1,0 +1,38 @@
+# ATOS — Task DAG Schema
+# Every task is a CID-linked node in a directed acyclic graph
+# This is the core IPLD structure — tasks link to children and executions
+
+type Task struct {
+    id              String
+    taskType        TaskType
+    status          TaskStatus
+    agentRole       String
+    agentPeerId     String
+    payload         {String:Any}
+    createdAt       Int
+    updatedAt       Int
+    parentTask      optional &Task          # CID link to parent
+    children        [&Task]                 # CID links to children
+    execution       optional &ExecutionLog  # CID link to result
+    escalated       optional Bool
+} representation map
+
+type TaskType enum {
+    | ContractDeploy      ("contract_deploy")
+    | LiquidityProvision  ("liquidity_provision")
+    | PoolMonitor         ("pool_monitor")
+    | FaultReport         ("fault_report")
+    | SwapExecute         ("swap_execute")
+    | AgentDiscovery      ("agent_discovery")
+    | KeyExchange         ("key_exchange")
+    | BackupMonitor       ("backup_monitor")
+} representation string
+
+type TaskStatus enum {
+    | Pending     ("pending")
+    | Running     ("running")
+    | Success     ("success")
+    | Failed      ("failed")
+    | Escalated   ("escalated")
+    | Recovered   ("recovered")
+} representation string
