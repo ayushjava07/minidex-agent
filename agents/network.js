@@ -16,7 +16,9 @@ const PROTOCOL        = '/atos/1.0.0'
 const AGENT_PORTS     = {
     deploy:  4001,
     monitor: 4002,
-    report:  4003
+    report:  4003,
+    liquidity: 4004,
+    analytics: 4005
 }
 
 // ── Topic handlers — same API as before ──────────────

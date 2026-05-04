@@ -6477,5 +6477,368 @@
     "escalated_to_human": false,
     "subtasks": [],
     "task_id": "bafyreib7l6uaef3cwujmuvec77m3re6uo6peypxcu6t3h64fslntoetk7e"
+  },
+  {
+    "parent_task": null,
+    "assigned_to": "12D3KooWEhZXxm5YoCc5ui45k9aNSamwma4sHzHxLF6Ux19DuCHp",
+    "workflow": "deploy-agent-startup",
+    "status": "in-progress",
+    "explanation": "Deploy agent started",
+    "timestamp": 1777912427142,
+    "inputs": {
+      "role": "deploy",
+      "network": "sepolia"
+    },
+    "outputs": null,
+    "escalated_to_human": false,
+    "subtasks": [
+      "bafyreig5owlo3phiap4g564ll7lmaplbalwftazlltds2kxzkulzngoep4",
+      "bafyreihtziye27fhf3gqfqvsruhtx34cvkpumpkf77qsxx6uit4ymkvcja",
+      "bafyreicd6tf6cxdvawdz3ifioaapgfmdmr4vxppjfc2vk6qgeghktsnaoe"
+    ],
+    "task_id": "bafyreidr4tt23jwmvwhvc2dm6ai55o3p4siugsfhbfsxf54lkreujdgis4"
+  },
+  {
+    "parent_task": null,
+    "assigned_to": "12D3KooWRK8uY5CTsUwv1DmyiEa7si86FwX42Aofij2JK9ZNLEZX",
+    "workflow": "monitor-agent-startup",
+    "status": "in-progress",
+    "explanation": "Monitor agent started - watching pool reserves on Sepolia",
+    "timestamp": 1777912429000,
+    "inputs": {
+      "role": "monitor",
+      "contract": "0x37b18fA954Fa516eE60f666A01A36AFCF6A59650"
+    },
+    "outputs": null,
+    "escalated_to_human": false,
+    "subtasks": [
+      "bafyreiamzauai6f3ilvh7cdvm4sl7sc573oqdso5veocn5agitef3aawbm",
+      "bafyreihqrf5kayackj5risaqsfev6aumof4pbtn54gcqtn7d3rdvtmyb6a",
+      "bafyreig35ufpjlvrqzefq3xpddvdphwyqvbtf3x4vjup7xnkgc7nlfycqy"
+    ],
+    "task_id": "bafyreiavzzjjlwtvu75hzlm3edamcg4okklqyctfdry2jyb3g3c63lowge"
+  },
+  {
+    "parent_task": null,
+    "assigned_to": "12D3KooWAd53Rv9irNtRcWeZJGFdLMPsGwibwfKEyRG4GrLn4Df5",
+    "workflow": "report-agent-startup",
+    "status": "in-progress",
+    "explanation": "Report agent started - monitoring system health and fault recovery",
+    "timestamp": 1777912430256,
+    "inputs": {
+      "role": "report",
+      "network": "sepolia"
+    },
+    "outputs": null,
+    "escalated_to_human": false,
+    "subtasks": [
+      "bafyreih7lsjtpecodgivwd5vrss5rjykmahen5fwxsp5dc5ea6vmql3zau"
+    ],
+    "task_id": "bafyreicz5sp26lt6hgpphn7ibbz344yx2a6ptgt5w2t2p3pjv5dmqnpetu"
+  },
+  {
+    "parent_task": null,
+    "assigned_to": "12D3KooWSaM9EPSDottLPbD1Kma1AFnJwTpwfeuYxqMyi159v2iB",
+    "workflow": "liquidity-agent-startup",
+    "status": "in-progress",
+    "explanation": "Liquidity Manager agent started - monitoring pool balance and health",
+    "timestamp": 1777912431210,
+    "inputs": {
+      "role": "liquidity",
+      "contract": "0x37b18fA954Fa516eE60f666A01A36AFCF6A59650"
+    },
+    "outputs": null,
+    "escalated_to_human": false,
+    "subtasks": [
+      "bafyreibfmr6cnriw74fiozovdjuqw2dhv5qzpfujscv27ccw5gz5xqyzla",
+      "bafyreicedp3orgsprg2mmvtzst37fxae2urre3pnjkeexd6ecqebpmfhdu"
+    ],
+    "task_id": "bafyreia7xl7iwzandspw6ksv7mqbvidqyb3uztgqnsxnytql6ib6oj45te"
+  },
+  {
+    "parent_task": null,
+    "assigned_to": "12D3KooW9w8zPbnub7EsmE316qugGF1xPjrZ2T642aeP2Te63knx",
+    "workflow": "analytics-agent-startup",
+    "status": "in-progress",
+    "explanation": "Analytics agent started - tracking swap volume, fees and pool health",
+    "timestamp": 1777912432521,
+    "inputs": {
+      "role": "analytics",
+      "contract": "0x37b18fA954Fa516eE60f666A01A36AFCF6A59650"
+    },
+    "outputs": null,
+    "escalated_to_human": false,
+    "subtasks": [
+      "bafyreicfi2qxy6fw2z62fqg2dfxkmmouaakedmb7c2ztlgwutreoo727ia",
+      "bafyreidz3wia7ozzjinlsj33jpm2xswfvsldpdsmmcv4vdnotybziwcb7m"
+    ],
+    "task_id": "bafyreiakl7ya27ryxgamuocry4dqdroiqggdh4zmcfxx22mjha6no64cmi"
+  },
+  {
+    "parent_task": "bafyreidr4tt23jwmvwhvc2dm6ai55o3p4siugsfhbfsxf54lkreujdgis4",
+    "assigned_to": "12D3KooWEhZXxm5YoCc5ui45k9aNSamwma4sHzHxLF6Ux19DuCHp",
+    "workflow": "contract-deployment",
+    "status": "completed",
+    "explanation": "ERC20 tokens and MiniDEX deployed and verified on Sepolia testnet",
+    "timestamp": 1777912442146,
+    "inputs": {
+      "network": "sepolia",
+      "contracts": [
+        "TokenA",
+        "TokenB",
+        "MiniDEX"
+      ]
+    },
+    "outputs": {
+      "tokenA": "0xF7a7152a2A939e21e0B0aBb34F12e2B260c5A5ED",
+      "tokenB": "0x95C5F14106ab4d1dc0cFC9326C287B702619A761",
+      "dex": "0x37b18fA954Fa516eE60f666A01A36AFCF6A59650"
+    },
+    "escalated_to_human": false,
+    "subtasks": [
+      "bafyreidtkspsxdaxkcsdo4u5kndfpnrmusfqgppgwev4phgvmfse2jq7qi"
+    ],
+    "task_id": "bafyreig5owlo3phiap4g564ll7lmaplbalwftazlltds2kxzkulzngoep4"
+  },
+  {
+    "parent_task": "bafyreig5owlo3phiap4g564ll7lmaplbalwftazlltds2kxzkulzngoep4",
+    "assigned_to": "12D3KooWEhZXxm5YoCc5ui45k9aNSamwma4sHzHxLF6Ux19DuCHp",
+    "workflow": "pqc-encrypted-broadcast",
+    "status": "completed",
+    "explanation": "Deploy complete signal encrypted with ML-KEM-768 + AES-256-CBC and sent to monitor",
+    "timestamp": 1777912442165,
+    "inputs": {
+      "targetAgent": "monitor",
+      "algorithm": "ML-KEM-768 + AES-256-CBC"
+    },
+    "outputs": null,
+    "escalated_to_human": false,
+    "subtasks": [],
+    "task_id": "bafyreidtkspsxdaxkcsdo4u5kndfpnrmusfqgppgwev4phgvmfse2jq7qi"
+  },
+  {
+    "parent_task": "bafyreidr4tt23jwmvwhvc2dm6ai55o3p4siugsfhbfsxf54lkreujdgis4",
+    "assigned_to": "12D3KooWEhZXxm5YoCc5ui45k9aNSamwma4sHzHxLF6Ux19DuCHp",
+    "workflow": "peer-registration",
+    "status": "completed",
+    "explanation": "Deploy agent registered in peer network with libp2p identity",
+    "timestamp": 1777912442168,
+    "inputs": {
+      "peerId": "12D3KooWEhZXxm5YoCc5ui45k9aNSamwma4sHzHxLF6Ux19DuCHp",
+      "protocol": "/atos/1.0.0"
+    },
+    "outputs": null,
+    "escalated_to_human": false,
+    "subtasks": [],
+    "task_id": "bafyreihtziye27fhf3gqfqvsruhtx34cvkpumpkf77qsxx6uit4ymkvcja"
+  },
+  {
+    "parent_task": "bafyreiavzzjjlwtvu75hzlm3edamcg4okklqyctfdry2jyb3g3c63lowge",
+    "assigned_to": "12D3KooWRK8uY5CTsUwv1DmyiEa7si86FwX42Aofij2JK9ZNLEZX",
+    "workflow": "monitor-pool",
+    "status": "completed",
+    "explanation": "Fetched live pool reserves from Sepolia MiniDEX contract",
+    "timestamp": 1777912445853,
+    "inputs": {
+      "contract": "0x37b18fA954Fa516eE60f666A01A36AFCF6A59650",
+      "network": "sepolia"
+    },
+    "outputs": {
+      "reserveA": "14200.0",
+      "reserveB": "23368.139177895275456253"
+    },
+    "escalated_to_human": false,
+    "subtasks": [],
+    "task_id": "bafyreiamzauai6f3ilvh7cdvm4sl7sc573oqdso5veocn5agitef3aawbm"
+  },
+  {
+    "parent_task": "bafyreia7xl7iwzandspw6ksv7mqbvidqyb3uztgqnsxnytql6ib6oj45te",
+    "assigned_to": "12D3KooWSaM9EPSDottLPbD1Kma1AFnJwTpwfeuYxqMyi159v2iB",
+    "workflow": "reserve-ratio-check",
+    "status": "completed",
+    "explanation": "Checked TokenA/TokenB reserve ratio in MiniDEX pool",
+    "timestamp": 1777912448124,
+    "inputs": {
+      "contract": "0x37b18fA954Fa516eE60f666A01A36AFCF6A59650",
+      "network": "sepolia"
+    },
+    "outputs": {
+      "reserveA": "14200.0000",
+      "reserveB": "23368.1392",
+      "ratio": "0.6077"
+    },
+    "escalated_to_human": false,
+    "subtasks": [],
+    "task_id": "bafyreibfmr6cnriw74fiozovdjuqw2dhv5qzpfujscv27ccw5gz5xqyzla"
+  },
+  {
+    "parent_task": "bafyreiakl7ya27ryxgamuocry4dqdroiqggdh4zmcfxx22mjha6no64cmi",
+    "assigned_to": "12D3KooW9w8zPbnub7EsmE316qugGF1xPjrZ2T642aeP2Te63knx",
+    "workflow": "swap-history-fetch",
+    "status": "completed",
+    "explanation": "Fetched swap events from last 1000 blocks on Sepolia",
+    "timestamp": 1777912449762,
+    "inputs": {
+      "contract": "0x37b18fA954Fa516eE60f666A01A36AFCF6A59650",
+      "fromBlock": 10788379,
+      "toBlock": 10789379
+    },
+    "outputs": {
+      "swapCount": 0,
+      "volumeTokenA": "0.0",
+      "volumeTokenB": "0.0"
+    },
+    "escalated_to_human": false,
+    "subtasks": [
+      "bafyreifyvw4sitdwowpx6i6dvts7557gtxcdy76n67ar6kiyayxxwqansu"
+    ],
+    "task_id": "bafyreicfi2qxy6fw2z62fqg2dfxkmmouaakedmb7c2ztlgwutreoo727ia"
+  },
+  {
+    "parent_task": "bafyreicfi2qxy6fw2z62fqg2dfxkmmouaakedmb7c2ztlgwutreoo727ia",
+    "assigned_to": "12D3KooW9w8zPbnub7EsmE316qugGF1xPjrZ2T642aeP2Te63knx",
+    "workflow": "pool-stats-calculation",
+    "status": "completed",
+    "explanation": "Calculated pool TVL, ratio, fees and uptime metrics",
+    "timestamp": 1777912450112,
+    "inputs": {
+      "reserveA": "14200.0000",
+      "reserveB": "23368.1392",
+      "swapCount": 0
+    },
+    "outputs": {
+      "tvl": "37568.1392",
+      "ratio": "0.6077",
+      "feesEarned": "0.000000",
+      "uptimeMins": 0
+    },
+    "escalated_to_human": false,
+    "subtasks": [
+      "bafyreiabs75lx3gg7h6dcw47x2uszms4fno5m2ftbl5236kky3m27lkfia"
+    ],
+    "task_id": "bafyreifyvw4sitdwowpx6i6dvts7557gtxcdy76n67ar6kiyayxxwqansu"
+  },
+  {
+    "parent_task": "bafyreifyvw4sitdwowpx6i6dvts7557gtxcdy76n67ar6kiyayxxwqansu",
+    "assigned_to": "12D3KooW9w8zPbnub7EsmE316qugGF1xPjrZ2T642aeP2Te63knx",
+    "workflow": "analytics-report-generation",
+    "status": "completed",
+    "explanation": "Generated full analytics report with swap volume, pool stats and agent health",
+    "timestamp": 1777912450118,
+    "inputs": {
+      "sessionMins": 0,
+      "swapCount": 0
+    },
+    "outputs": {
+      "generatedAt": "2026-05-04T16:34:10.118Z",
+      "sessionMins": 0,
+      "swaps": {
+        "total": 0,
+        "volumeTokenA": "0.0",
+        "volumeTokenB": "0.0"
+      },
+      "pool": {
+        "reserveA": "14200.0000",
+        "reserveB": "23368.1392",
+        "ratio": "0.6077",
+        "tvl": "37568.1392",
+        "feesEarned": "0.000000"
+      },
+      "agents": {
+        "analytics": "active",
+        "monitor": "active",
+        "deploy": "active",
+        "report": "active",
+        "liquidity": "active"
+      },
+      "network": "sepolia"
+    },
+    "escalated_to_human": false,
+    "subtasks": [],
+    "task_id": "bafyreiabs75lx3gg7h6dcw47x2uszms4fno5m2ftbl5236kky3m27lkfia"
+  },
+  {
+    "parent_task": "bafyreiavzzjjlwtvu75hzlm3edamcg4okklqyctfdry2jyb3g3c63lowge",
+    "assigned_to": "12D3KooWRK8uY5CTsUwv1DmyiEa7si86FwX42Aofij2JK9ZNLEZX",
+    "workflow": "monitor-pool",
+    "status": "completed",
+    "explanation": "Fetched live pool reserves from Sepolia MiniDEX contract",
+    "timestamp": 1777912457461,
+    "inputs": {
+      "contract": "0x37b18fA954Fa516eE60f666A01A36AFCF6A59650",
+      "network": "sepolia"
+    },
+    "outputs": {
+      "reserveA": "14200.0",
+      "reserveB": "23368.139177895275456253"
+    },
+    "escalated_to_human": false,
+    "subtasks": [],
+    "task_id": "bafyreihqrf5kayackj5risaqsfev6aumof4pbtn54gcqtn7d3rdvtmyb6a"
+  },
+  {
+    "parent_task": "bafyreidr4tt23jwmvwhvc2dm6ai55o3p4siugsfhbfsxf54lkreujdgis4",
+    "assigned_to": "12D3KooWEhZXxm5YoCc5ui45k9aNSamwma4sHzHxLF6Ux19DuCHp",
+    "workflow": "deploy-agent-shutdown",
+    "status": "completed",
+    "explanation": "Deploy agent shutting down gracefully",
+    "timestamp": 1777912465266,
+    "inputs": {},
+    "outputs": null,
+    "escalated_to_human": false,
+    "subtasks": [],
+    "task_id": "bafyreicd6tf6cxdvawdz3ifioaapgfmdmr4vxppjfc2vk6qgeghktsnaoe"
+  },
+  {
+    "parent_task": "bafyreiavzzjjlwtvu75hzlm3edamcg4okklqyctfdry2jyb3g3c63lowge",
+    "assigned_to": "12D3KooWRK8uY5CTsUwv1DmyiEa7si86FwX42Aofij2JK9ZNLEZX",
+    "workflow": "monitor-agent-shutdown",
+    "status": "completed",
+    "explanation": "Monitor agent shutting down gracefully",
+    "timestamp": 1777912466498,
+    "inputs": {},
+    "outputs": null,
+    "escalated_to_human": false,
+    "subtasks": [],
+    "task_id": "bafyreig35ufpjlvrqzefq3xpddvdphwyqvbtf3x4vjup7xnkgc7nlfycqy"
+  },
+  {
+    "parent_task": "bafyreicz5sp26lt6hgpphn7ibbz344yx2a6ptgt5w2t2p3pjv5dmqnpetu",
+    "assigned_to": "12D3KooWAd53Rv9irNtRcWeZJGFdLMPsGwibwfKEyRG4GrLn4Df5",
+    "workflow": "report-agent-shutdown",
+    "status": "completed",
+    "explanation": "Report agent shutting down gracefully",
+    "timestamp": 1777912467340,
+    "inputs": {},
+    "outputs": null,
+    "escalated_to_human": false,
+    "subtasks": [],
+    "task_id": "bafyreih7lsjtpecodgivwd5vrss5rjykmahen5fwxsp5dc5ea6vmql3zau"
+  },
+  {
+    "parent_task": "bafyreia7xl7iwzandspw6ksv7mqbvidqyb3uztgqnsxnytql6ib6oj45te",
+    "assigned_to": "12D3KooWSaM9EPSDottLPbD1Kma1AFnJwTpwfeuYxqMyi159v2iB",
+    "workflow": "liquidity-agent-shutdown",
+    "status": "completed",
+    "explanation": "Liquidity Manager agent shutting down gracefully",
+    "timestamp": 1777912468515,
+    "inputs": {},
+    "outputs": null,
+    "escalated_to_human": false,
+    "subtasks": [],
+    "task_id": "bafyreicedp3orgsprg2mmvtzst37fxae2urre3pnjkeexd6ecqebpmfhdu"
+  },
+  {
+    "parent_task": "bafyreiakl7ya27ryxgamuocry4dqdroiqggdh4zmcfxx22mjha6no64cmi",
+    "assigned_to": "12D3KooW9w8zPbnub7EsmE316qugGF1xPjrZ2T642aeP2Te63knx",
+    "workflow": "analytics-agent-shutdown",
+    "status": "completed",
+    "explanation": "Analytics agent shutting down gracefully",
+    "timestamp": 1777912469322,
+    "inputs": {},
+    "outputs": null,
+    "escalated_to_human": false,
+    "subtasks": [],
+    "task_id": "bafyreidz3wia7ozzjinlsj33jpm2xswfvsldpdsmmcv4vdnotybziwcb7m"
   }
 ]
