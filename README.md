@@ -1,11 +1,7 @@
 # 🚀 MiniDEX Agent — ATOS Project  
 ### Autonomous Token Orchestration System
 
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](https://choosealicense.com/licenses/mit/)  
-[![Network](https://img.shields.io/badge/Network-Sepolia-blue.svg)]()  
-[![Frontend](https://img.shields.io/badge/Frontend-Vercel-black.svg)](https://minidex-agent.vercel.app)  
-[![Agents](https://img.shields.io/badge/Agents-5%20Running-brightgreen.svg)]()  
-[![Tests](https://img.shields.io/badge/Tests-56%20Passing-success.svg)]()
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](https://choosealicense.com/licenses/mit/)  [![Network](https://img.shields.io/badge/Network-Sepolia-blue.svg)]()  [![Frontend](https://img.shields.io/badge/Frontend-Vercel-black.svg)](https://minidex-agent.vercel.app)  [![Agents](https://img.shields.io/badge/Agents-5%20Running-brightgreen.svg)]()  [![Tests](https://img.shields.io/badge/Tests-56%20Passing-success.svg)]()
 
 ---
 
