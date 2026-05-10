@@ -3238,5 +3238,175 @@
     "tx_hash": null,
     "gas_used": null,
     "log_id": "bafyreifplaf5zq3nda3p6fgboarntosdutrq6csiz7y2jqj7fdboeg72ay"
+  },
+  {
+    "task_ref": "bafyreidatgrdxxvl5trr5bc6wupmj6hc5eaykienkq7imyl5hnuqaslluu",
+    "timestamp": 1778321359654,
+    "event": "contracts_deployed",
+    "agent": "12D3KooWDKVUG1XwMRgo5XixqfoARoY2QmcT8asnXuGLKwma78gv",
+    "outcome": "success",
+    "tx_hash": null,
+    "gas_used": null,
+    "log_id": "bafyreif2kf5nzvvlogekz52ehprruy67fpjqqw2eo3zuer5atrfrthjdze"
+  },
+  {
+    "task_ref": "bafyreief7g3zkajdoupc3id57vuqx3jsvq6olyvatr6njkj4tc2wietsdu",
+    "timestamp": 1778321359669,
+    "event": "pqc_message_sent",
+    "agent": "12D3KooWDKVUG1XwMRgo5XixqfoARoY2QmcT8asnXuGLKwma78gv",
+    "outcome": "success",
+    "tx_hash": null,
+    "gas_used": null,
+    "log_id": "bafyreidunslen6re42tyqeiqcnnrt4dmwncfnjussze76tathv3zc5ea54"
+  },
+  {
+    "task_ref": "bafyreigk6b3hmylv346qkcufqcucvvj2ygzz5rhwvk6kiylc57f5sc6wii",
+    "timestamp": 1778321359672,
+    "event": "peer_registered",
+    "agent": "12D3KooWDKVUG1XwMRgo5XixqfoARoY2QmcT8asnXuGLKwma78gv",
+    "outcome": "success",
+    "tx_hash": null,
+    "gas_used": null,
+    "log_id": "bafyreibq47znki7zhrirkedpfaakqzvqaqitlxkqpmp2stspxnj6gvwdum"
+  },
+  {
+    "task_ref": "bafyreidrsq33fabxlv4sjga3q3uouvs5x4cslp2tm4o27ehzhwun2yawr4",
+    "timestamp": 1778321366958,
+    "event": "pool_reserves_fetched",
+    "agent": "12D3KooWEVaroaTZPDomMkxBb8DrrG3DKPC2D8TXnKHixkXk2hNf",
+    "outcome": "success",
+    "tx_hash": null,
+    "gas_used": null,
+    "log_id": "bafyreidiasvztjfw2mqgh75pfujubkj3tgyiv55jztqbyyn22ayrqnspaa"
+  },
+  {
+    "task_ref": "bafyreiapoxewudg7qjpns4kxy4btldppksqxpru5ybpf6yqjqeofehhx6u",
+    "timestamp": 1778321378879,
+    "event": "pool_reserves_fetched",
+    "agent": "12D3KooWEVaroaTZPDomMkxBb8DrrG3DKPC2D8TXnKHixkXk2hNf",
+    "outcome": "success",
+    "tx_hash": null,
+    "gas_used": null,
+    "log_id": "bafyreie2winqqfkbsmw3vucn6bjg6ubjytffrlfff77bk2kevnvjjf34wm"
+  },
+  {
+    "task_ref": "bafyreigjjkh7hgtk3rh5xwxywy7spb7c4pknopcv63dukzwssex2bv7lgi",
+    "timestamp": 1778321389003,
+    "event": "pool_reserves_fetched",
+    "agent": "12D3KooWEVaroaTZPDomMkxBb8DrrG3DKPC2D8TXnKHixkXk2hNf",
+    "outcome": "success",
+    "tx_hash": null,
+    "gas_used": null,
+    "log_id": "bafyreia54nxikc3mfewbuwwzk6ui4c5bruol5plctwmpheizxbuj3q36h4"
+  },
+  {
+    "task_ref": "bafyreihbqs2apbrs3nokvtezwsuwj2cvjz5e3xtn2k3bvsmhzyhe63kp6e",
+    "timestamp": 1778321399714,
+    "event": "pool_reserves_fetched",
+    "agent": "12D3KooWEVaroaTZPDomMkxBb8DrrG3DKPC2D8TXnKHixkXk2hNf",
+    "outcome": "success",
+    "tx_hash": null,
+    "gas_used": null,
+    "log_id": "bafyreicr2z5icjhnpnzj3l62u3el3l6wqvdrdrzojwpwlonxdc2wukjodu"
+  },
+  {
+    "task_ref": "bafyreigpdstwej3smhoo3czrryxq56br76zuko2pflqqbo73qt4n474rme",
+    "timestamp": 1778321402126,
+    "event": "ratio_checked",
+    "agent": "12D3KooWB8DjmA9aEB1NtneqaA47J63wZ3W7NsEd283pAzwDvwDw",
+    "outcome": "success",
+    "tx_hash": null,
+    "gas_used": null,
+    "log_id": "bafyreidalvefuxjmgdnmwz4inq3obmw7cv4d67za34f6jvs3ysbtb3tbwu"
+  },
+  {
+    "task_ref": "bafyreidivibf4afzsejeifftifxijadsl7hygwnhv2sbgmxfwxy4obxy5q",
+    "timestamp": 1778321407471,
+    "event": "swap_history_fetched",
+    "agent": "12D3KooWEnVjN4GmmEZ9o2D5RYppdMNHb8fR4PCJxhH1CLPyopnz",
+    "outcome": "success",
+    "tx_hash": null,
+    "gas_used": null,
+    "log_id": "bafyreic4yupya2vnbv6mfx3bkcjyiccafbhc2kucqgvidk3qgorzwfgz6q"
+  },
+  {
+    "task_ref": "bafyreigfomegyers7wc56gubcchnavc62dzezuro333kqnqctkxknzy5xm",
+    "timestamp": 1778321407920,
+    "event": "pool_stats_calculated",
+    "agent": "12D3KooWEnVjN4GmmEZ9o2D5RYppdMNHb8fR4PCJxhH1CLPyopnz",
+    "outcome": "success",
+    "tx_hash": null,
+    "gas_used": null,
+    "log_id": "bafyreidg3my77dmu3wpzzdl7iuhexidta2xplaaeu2ny3oqcgwbre5f5ha"
+  },
+  {
+    "task_ref": "bafyreiehebit4a33lwpxsz26dek7efupdj3pycfnrgmr7qtad7yup43xgy",
+    "timestamp": 1778321407925,
+    "event": "analytics_report_generated",
+    "agent": "12D3KooWEnVjN4GmmEZ9o2D5RYppdMNHb8fR4PCJxhH1CLPyopnz",
+    "outcome": "success",
+    "tx_hash": null,
+    "gas_used": null,
+    "log_id": "bafyreifzt2qr2deeslaernf7xl3yswvechx7iimnkgwcpjqm6d7ezfypoi"
+  },
+  {
+    "task_ref": "bafyreigovz4nfzd6lvzvdycdo7cxjxibhmv2nokbquc3wiv6ioudqsqloy",
+    "timestamp": 1778321434080,
+    "event": "ratio_checked",
+    "agent": "12D3KooWB8DjmA9aEB1NtneqaA47J63wZ3W7NsEd283pAzwDvwDw",
+    "outcome": "success",
+    "tx_hash": null,
+    "gas_used": null,
+    "log_id": "bafyreiad3uyff3shiolg2e75mfsy2yubnlvvb7ies64klu63a5fzghe5om"
+  },
+  {
+    "task_ref": "bafyreidv5vt4r44zbaikaijcrsedccixl6rf5c3gkdngtnrmrrdmetckqy",
+    "timestamp": 1778321463994,
+    "event": "ratio_checked",
+    "agent": "12D3KooWB8DjmA9aEB1NtneqaA47J63wZ3W7NsEd283pAzwDvwDw",
+    "outcome": "success",
+    "tx_hash": null,
+    "gas_used": null,
+    "log_id": "bafyreigrte6u4dlm55umwkwpjbenmjnwaxnl2vq5lxxcdo7fcztkk57jpm"
+  },
+  {
+    "task_ref": "bafyreicz4xrsvgb7ct6g6qlhuqmye4oms3pobjzlyu6ejr7vfebrndy2om",
+    "timestamp": 1778321470076,
+    "event": "swap_history_fetched",
+    "agent": "12D3KooWEnVjN4GmmEZ9o2D5RYppdMNHb8fR4PCJxhH1CLPyopnz",
+    "outcome": "success",
+    "tx_hash": null,
+    "gas_used": null,
+    "log_id": "bafyreifmnk5kw6tcyyy4sddeht6xjcqstimme6pnzu3vnvvyj24cndni5a"
+  },
+  {
+    "task_ref": "bafyreihs2kpipbh3jczhqrx3wr4j76kttznwqhuzfcpyqyk7mkycnvsgsy",
+    "timestamp": 1778321470488,
+    "event": "pool_stats_calculated",
+    "agent": "12D3KooWEnVjN4GmmEZ9o2D5RYppdMNHb8fR4PCJxhH1CLPyopnz",
+    "outcome": "success",
+    "tx_hash": null,
+    "gas_used": null,
+    "log_id": "bafyreiheiuhhvljefdnobaj3beczvj2rosh6dwwmsrssefwpybfl7taoha"
+  },
+  {
+    "task_ref": "bafyreihhr7lrkncx7rgnxs4c5xnfzkf7veopzcnbcsvugrlmyoj3jpkf4e",
+    "timestamp": 1778321470492,
+    "event": "analytics_report_generated",
+    "agent": "12D3KooWEnVjN4GmmEZ9o2D5RYppdMNHb8fR4PCJxhH1CLPyopnz",
+    "outcome": "success",
+    "tx_hash": null,
+    "gas_used": null,
+    "log_id": "bafyreidjvln2wwxo4zsio6g3gzppups4wbnbwcnd4vd5jklerqliiahoxy"
+  },
+  {
+    "task_ref": "bafyreicteake4fgcrtqux7k2f3fbaeczpdh4he5wgejk7pamlkwb4gtyu4",
+    "timestamp": 1778321494861,
+    "event": "ratio_checked",
+    "agent": "12D3KooWB8DjmA9aEB1NtneqaA47J63wZ3W7NsEd283pAzwDvwDw",
+    "outcome": "success",
+    "tx_hash": null,
+    "gas_used": null,
+    "log_id": "bafyreicimala5zninzqbqcjxub4dutfrm2zbtibja45ttwtekkov7xq6ee"
   }
 ]
