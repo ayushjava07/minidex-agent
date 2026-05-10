@@ -32,13 +32,12 @@ async function main() {
     console.log('⏳ Waiting 10s for all TCP servers to be ready...\n')
     await sleep(10000)
 
-    // ── Phase 3: Skip upfront connection establishment ──────
-    // Note: publishMessage will attempt on-demand dial if needed
-    console.log('💡 Skipping upfront connections (will attempt on-demand)\n')
-    // for (const node of nodes) {
-    //     await connectToAllPeers(node)
-    //     await sleep(200)
-    // }
+    // ── Phase 3: Connect everyone to everyone ─────────
+    console.log('🔗 Connecting all agents...\n')
+    for (const node of nodes) {
+        await connectToAllPeers(node)
+        await sleep(200)
+    }
 
     // ── Phase 4: Network Status ───────────────────────
     await sleep(500)

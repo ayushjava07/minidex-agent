@@ -51,7 +51,7 @@ export async function createAgentNode(role) {
             listen: [`/ip4/127.0.0.1/tcp/${port}`]
         },
         transports:           [tcp()],
-        connectionEncryption: [noise()],
+        connectionEncrypters: [noise()],
         streamMuxers:         [yamux()],
         services: {
             identify: identify()
@@ -59,9 +59,8 @@ export async function createAgentNode(role) {
     })
 
     // ── Handle incoming ATOS messages ─────────────────
-    await node.handle(PROTOCOL, async ({ stream, connection }) => {
+    await node.handle(PROTOCOL, async (stream) => {
         try {
-            console.log(`[Network][${role}] RECEIVED STREAM from ${connection.remotePeer.toString().slice(0, 16)}...`)
             const chunks = []
             for await (const chunk of stream.source) {
                 chunks.push(chunk)
@@ -76,9 +75,7 @@ export async function createAgentNode(role) {
                 for (const h of handlers) h(message.data)
             }
 
-            // Close both read and write sides of stream
-            stream.closeRead()
-            stream.closeWrite()
+            await stream.close()
 
         } catch (err) {
             console.error(`[Network][${role}] Handler error: ${err.message}`)
@@ -131,32 +128,21 @@ export async function connectToAllPeers(node) {
         if (info.port === myPort) continue
 
         try {
-            // Step 1: Register address AND advertise protocols in peer Store
-            const targetAddr = multiaddr(`/ip4/127.0.0.1/tcp/${info.port}`)
+            // Step 1: Register address in peerStore.
+            // libp2p needs PeerID and multiaddr before dialing by PeerId.
             await node.peerStore.merge(info.peerId, {
-                multiaddrs: [targetAddr],
-                protocols: [PROTOCOL]  // Also advertise protocol support
+                multiaddrs: [multiaddr(`/ip4/127.0.0.1/tcp/${info.port}`)]
             })
 
-            console.log(`[Network][${myRole}] DEBUG: Attempting dial to [${role}] at ${info.port}...`)
-
-            // Step 2: Establish connection 
             const conn = await node.dial(info.peerId)
-            
-            // Step 3: Verify connection by opening a test stream
+
+            // Step 3: Verify the connection by opening a protocol stream.
             const testStream = await conn.newStream(PROTOCOL)
-            testStream.closeRead()
-            testStream.closeWrite()
-            
+            await testStream.close()
+
             console.log(`[Network][${myRole}] ✅ [${role}] at port ${info.port}`)
             connected++
         } catch (err) {
-            console.error(`[Network][${myRole}] FULL ERROR:`, {
-                code: err.code,
-                name: err.name,
-                message: err.message,
-                stack: err.stack?.split('\n').slice(0, 3).join('\n')
-            })
             console.log(`[Network][${myRole}] ⚠️  [${role}]: ${err.message.slice(0, 60)}`)
         }
     }
@@ -219,9 +205,7 @@ export async function publishMessage(node, topic, data) {
         try {
             const stream = await conn.newStream(PROTOCOL)
             await pipe([fromString(payload)], stream.sink)
-            // Close both read and write sides of stream
-            stream.closeRead()
-            stream.closeWrite()
+            await stream.close()
             sent++
             console.log(`[Network][${node.role}] → [${topic}] → ${conn.remotePeer.toString().slice(0, 16)}...`)
         } catch (err) {
