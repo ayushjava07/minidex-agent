@@ -4,14 +4,14 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test":      "echo \"Error: no test specified\" && exit 1",
-    "deploy":    "node agents/deploy-agent-v2.js",
-    "monitor":   "node agents/monitor-agent-v2.js",
-    "report":    "node agents/report-agent-v2.js",
+    "deploy": "node agents/deploy-agent-v2.js",
+    "monitor": "node agents/monitor-agent-v2.js",
+    "report": "node agents/report-agent-v2.js",
     "liquidity": "node agents/liquidity-agent.js",
     "analytics": "node agents/analytics-agent.js",
-    "agents":    "concurrently \"npm run deploy\" \"npm run monitor\" \"npm run report\" \"npm run liquidity\" \"npm run analytics\""
-    },
+    "agents": "concurrently \"npm run deploy\" \"npm run monitor\" \"npm run report\" \"npm run liquidity\" \"npm run analytics\"",
+    "test:network": "node scripts/testNetwork.js"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",

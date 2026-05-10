@@ -1,60 +1,67 @@
-// agents/network.js — NEW VERSION
-// Drops peers.json — uses mDNS for real discovery
+// agents/network.js — FINAL WORKING VERSION
 
-import { createLibp2p }  from 'libp2p'
-import { tcp }           from '@libp2p/tcp'
-import { noise }         from '@chainsafe/libp2p-noise'
-import { yamux }         from '@chainsafe/libp2p-yamux'
-import { identify }      from '@libp2p/identify'
-import { mdns }          from '@libp2p/mdns'
-import { pipe }          from 'it-pipe'
-import { toString }      from 'uint8arrays/to-string'
-import { fromString }    from 'uint8arrays/from-string'
+import { createLibp2p } from 'libp2p'
+import { tcp }          from '@libp2p/tcp'
+import { noise }        from '@chainsafe/libp2p-noise'
+import { yamux }        from '@chainsafe/libp2p-yamux'
+import { identify }     from '@libp2p/identify'
+import { pipe }         from 'it-pipe'
+import { toString }     from 'uint8arrays/to-string'
+import { fromString }   from 'uint8arrays/from-string'
+import { multiaddr }    from '@multiformats/multiaddr'
 
-// ── Constants ────────────────────────────────────────
-const PROTOCOL        = '/atos/1.0.0'
-const AGENT_PORTS     = {
-    deploy:  4001,
-    monitor: 4002,
-    report:  4003,
+// ── Constants ──────────────────────────────────────────
+const PROTOCOL    = '/atos/1.0.0'
+
+const AGENT_PORTS = {
+    deploy   : 4001,
+    monitor  : 4002,
+    report   : 4003,
     liquidity: 4004,
     analytics: 4005
 }
 
-// ── Topic handlers — same API as before ──────────────
+// ── Shared registry — ALL agents in same process ───────
+// Maps role → { peerId, port }
+const agentRegistry = new Map()
+
+// ── Topic handlers ─────────────────────────────────────
 const topicHandlers = new Map()
 
-// ── Single exported node reference ───────────────────
-let globalNode = null
+// ── Helpers ────────────────────────────────────────────
+const sleep = ms => new Promise(r => setTimeout(r, ms))
 
-// ─────────────────────────────────────────────────────
+function getUniquePeerCount(node) {
+    const seen = new Set()
+    return node.getConnections().filter(c => {
+        const id = c.remotePeer.toString()
+        if (seen.has(id)) return false
+        seen.add(id)
+        return true
+    }).length
+}
+
+// ─────────────────────────────────────────────────────────
 export async function createAgentNode(role) {
     const port = AGENT_PORTS[role]
     if (!port) throw new Error(`Unknown role: ${role}`)
 
     const node = await createLibp2p({
         addresses: {
-            listen: [`/ip4/0.0.0.0/tcp/${port}`]
+            listen: [`/ip4/127.0.0.1/tcp/${port}`]
         },
         transports:           [tcp()],
         connectionEncryption: [noise()],
         streamMuxers:         [yamux()],
         services: {
             identify: identify()
-        },
-        peerDiscovery: [
-            // mDNS — automatically finds agents on same machine/LAN
-            // No configuration needed — just works
-            mdns({
-                interval:   10_000,
-                serviceTag: 'atos-agent'   // all ATOS agents share this tag
-            })
-        ]
+        }
     })
 
-    // ── Handle incoming ATOS protocol messages ────────
+    // ── Handle incoming ATOS messages ─────────────────
     await node.handle(PROTOCOL, async ({ stream, connection }) => {
         try {
+            console.log(`[Network][${role}] RECEIVED STREAM from ${connection.remotePeer.toString().slice(0, 16)}...`)
             const chunks = []
             for await (const chunk of stream.source) {
                 chunks.push(chunk)
@@ -62,94 +69,193 @@ export async function createAgentNode(role) {
             const raw     = chunks.map(c => toString(c)).join('')
             const message = JSON.parse(raw)
 
-            console.log(`[Network] Received [${message.topic}] from [${message.from}]`)
+            console.log(`[Network][${role}] ← [${message.topic}] from [${message.from}]`)
 
             const handlers = topicHandlers.get(message.topic)
             if (handlers) {
-                handlers.forEach(h => h(message.data))
+                for (const h of handlers) h(message.data)
             }
+
+            // Close both read and write sides of stream
+            stream.closeRead()
+            stream.closeWrite()
+
         } catch (err) {
-            console.error(`[Network] Message parse error: ${err.message}`)
+            console.error(`[Network][${role}] Handler error: ${err.message}`)
         }
     })
 
-    // ── Auto connect when peer discovered via mDNS ───
-    node.addEventListener('peer:discovery', async (evt) => {
-        const peerId = evt.detail.id.toString()
-        console.log(`[mDNS] Discovered peer: ${peerId.slice(0, 20)}...`)
-
-        try {
-            await node.dial(evt.detail.id)
-            console.log(`[mDNS] Connected to: ${peerId.slice(0, 20)}...`)
-        } catch {
-            // peer may not be ready yet — okay
-        }
+    // ── Connection events ─────────────────────────────
+    node.addEventListener('peer:connect', () => {
+        console.log(`[Network][${role}] ✅ Peers: ${getUniquePeerCount(node)}`)
     })
 
-    node.addEventListener('peer:connect', (evt) => {
-        console.log(`[Network] Peer connected: ${evt.detail.toString().slice(0, 20)}...`)
-    })
-
-    node.addEventListener('peer:disconnect', (evt) => {
-        console.log(`[Network] Peer disconnected: ${evt.detail.toString().slice(0, 20)}...`)
+    node.addEventListener('peer:disconnect', () => {
+        console.log(`[Network][${role}] ❌ Peers: ${getUniquePeerCount(node)}`)
     })
 
     await node.start()
 
-    node.role = role
-    globalNode = node
+    // ── Register self in shared registry ─────────────
+    // This is the KEY — store peerId so others can dial
+    agentRegistry.set(role, {
+        peerId : node.peerId,
+        port   : port
+    })
 
-    console.log(`[Network] Agent [${role}] started`)
-    console.log(`[Network] Peer ID : ${node.peerId.toString()}`)
-    console.log(`[Network] Addr    : /ip4/0.0.0.0/tcp/${port}/p2p/${node.peerId}`)
-    console.log(`[Network] Discovery: mDNS active — waiting for peers...`)
+    node.role = role
+
+    console.log(`\n${'═'.repeat(52)}`)
+    console.log(` Agent    : ${role}`)
+    console.log(` PeerID   : ${node.peerId.toString()}`)
+    console.log(` Address  : /ip4/127.0.0.1/tcp/${port}`)
+    console.log(` Protocol : ${PROTOCOL}`)
+    console.log(`${'═'.repeat(52)}\n`)
 
     return node
 }
 
-// ─────────────────────────────────────────────────────
-export async function publishMessage(node, topic, message) {
-    const connections = node.getConnections()
+// ─────────────────────────────────────────────────────────
+// Call AFTER all agents created — uses registry for full multiaddr
+// ─────────────────────────────────────────────────────────
+export async function connectToAllPeers(node) {
+    const myRole = node.role
+    const myPort = AGENT_PORTS[myRole]
 
-    if (connections.length === 0) {
-        console.log(`[Network] No peers connected yet for [${topic}]`)
-        return
-    }
+    console.log(`[Network][${myRole}] Connecting to all peers...`)
 
-    let sent = 0
+    let connected = 0
 
-    for (const conn of connections) {
+    for (const [role, info] of agentRegistry.entries()) {
+        // Skip self
+        if (info.port === myPort) continue
+
         try {
-            const stream  = await conn.newStream(PROTOCOL)
-            const payload = JSON.stringify({
-                topic,
-                data: message,
-                from: node.role,
-                ts:   Date.now()
+            // Step 1: Register address AND advertise protocols in peer Store
+            const targetAddr = multiaddr(`/ip4/127.0.0.1/tcp/${info.port}`)
+            await node.peerStore.merge(info.peerId, {
+                multiaddrs: [targetAddr],
+                protocols: [PROTOCOL]  // Also advertise protocol support
             })
 
-            await pipe(
-                [fromString(payload)],
-                stream
-            )
+            console.log(`[Network][${myRole}] DEBUG: Attempting dial to [${role}] at ${info.port}...`)
 
-            sent++
-            console.log(`[Network] Sent [${topic}] to ${conn.remotePeer.toString().slice(0, 20)}...`)
-        } catch {
-            // connection may have dropped
+            // Step 2: Establish connection 
+            const conn = await node.dial(info.peerId)
+            
+            // Step 3: Verify connection by opening a test stream
+            const testStream = await conn.newStream(PROTOCOL)
+            testStream.closeRead()
+            testStream.closeWrite()
+            
+            console.log(`[Network][${myRole}] ✅ [${role}] at port ${info.port}`)
+            connected++
+        } catch (err) {
+            console.error(`[Network][${myRole}] FULL ERROR:`, {
+                code: err.code,
+                name: err.name,
+                message: err.message,
+                stack: err.stack?.split('\n').slice(0, 3).join('\n')
+            })
+            console.log(`[Network][${myRole}] ⚠️  [${role}]: ${err.message.slice(0, 60)}`)
         }
     }
 
-    if (sent === 0) {
-        console.log(`[Network] No peers available for [${topic}]`)
-    }
+    console.log(`[Network][${myRole}] Connected: ${connected}/${Object.keys(AGENT_PORTS).length - 1}\n`)
+    return connected
 }
 
-// ─────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────
+export async function publishMessage(node, topic, data) {
+    // Get existing connections
+    let seen = new Set()
+    let unique = node.getConnections().filter(c => {
+        const id = c.remotePeer.toString()
+        if (seen.has(id)) return false
+        seen.add(id)
+        return true
+    })
+
+    // Try to establish missing connections
+    for (const [role, info] of agentRegistry.entries()) {
+        if (node.role === role) continue // Skip self
+        
+        // Check if we're already connected to this peer
+        const alreadyConnected = unique.some(c => c.remotePeer.equals(info.peerId))
+        if (alreadyConnected) continue
+        
+        try {
+            // Attempt to dial
+            const targetAddr = multiaddr(`/ip4/127.0.0.1/tcp/${info.port}`)
+            await node.peerStore.merge(info.peerId, { multiaddrs: [targetAddr] })
+            const conn = await node.dial(info.peerId)
+            
+            // Verify connection works
+            const testStream = await conn.newStream(PROTOCOL)
+            testStream.closeRead()
+            testStream.closeWrite()
+            
+            unique.push(conn)
+        } catch (err) {
+            // Connection failed, skip this peer
+        }
+    }
+
+    if (unique.length === 0) {
+        console.log(`[Network][${node.role}] ⚠️  No peers for [${topic}]`)
+        return { sent: 0, total: 0 }
+    }
+
+    const payload = JSON.stringify({
+        topic,
+        data,
+        from : node.role,
+        ts   : Date.now()
+    })
+
+    let sent = 0
+
+    for (const conn of unique) {
+        try {
+            const stream = await conn.newStream(PROTOCOL)
+            await pipe([fromString(payload)], stream.sink)
+            // Close both read and write sides of stream
+            stream.closeRead()
+            stream.closeWrite()
+            sent++
+            console.log(`[Network][${node.role}] → [${topic}] → ${conn.remotePeer.toString().slice(0, 16)}...`)
+        } catch (err) {
+            console.log(`[Network][${node.role}] Send error: ${err.message.slice(0, 50)}`)
+        }
+    }
+
+    console.log(`[Network][${node.role}] Broadcast [${topic}]: ${sent}/${unique.length}`)
+    return { sent, total: unique.length }
+}
+
+// ─────────────────────────────────────────────────────────
 export function subscribeToTopic(node, topic, handler) {
     if (!topicHandlers.has(topic)) {
         topicHandlers.set(topic, [])
     }
     topicHandlers.get(topic).push(handler)
-    console.log(`[Network] Subscribed to: ${topic}`)
+    console.log(`[Network][${node.role}] Subscribed: ${topic}`)
 }
+
+// ─────────────────────────────────────────────────────────
+export function getNetworkStatus(node) {
+    const seen  = new Set()
+    const peers = node.getConnections()
+        .filter(c => {
+            const id = c.remotePeer.toString()
+            if (seen.has(id)) return false
+            seen.add(id)
+            return true
+        })
+        .map(c => c.remotePeer.toString().slice(0, 16) + '...')
+
+    return { role: node.role, peers: peers.length, list: peers }
+}
+
+// ─────────────────────────────────────────────────────────
+export { agentRegistry }
