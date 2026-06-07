@@ -36,6 +36,25 @@ describe("Agent health monitoring", function () {
     it("rejects invalid readiness configuration", async function () {
         await expect(startHealthServer(createNode([]), { port: 0, minPeers: -1 }))
             .to.be.rejectedWith("HEALTH_MIN_PEERS must be a non-negative integer");
+        await expect(startHealthServer(createNode([]), {
+            port: 0,
+            minPeers: 0,
+            env: { HEALTH_HOST: " " },
+        })).to.be.rejectedWith("HEALTH_HOST must be a non-empty string");
+    });
+
+    it("uses the configured health host", async function () {
+        const server = await startHealthServer(createNode([]), {
+            port: 0,
+            minPeers: 0,
+            env: { HEALTH_HOST: " 127.0.0.1 " },
+        });
+
+        try {
+            expect(server.address().address).to.equal("127.0.0.1");
+        } finally {
+            await server.stop();
+        }
     });
 
     it("exposes Prometheus metrics", async function () {

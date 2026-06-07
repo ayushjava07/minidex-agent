@@ -28,19 +28,24 @@ function sendMetrics(response, registry) {
 export async function startHealthServer(node, options = {}) {
     const role = node.role
     const port = options.port ?? HEALTH_PORTS[role]
-    const host = options.host ?? '127.0.0.1'
-    const minPeers = options.minPeers ?? Number(process.env.HEALTH_MIN_PEERS || 1)
+    const env = options.env ?? process.env
+    const configuredHost = options.host ?? env.HEALTH_HOST ?? '127.0.0.1'
+    const minPeers = options.minPeers ?? Number(env.HEALTH_MIN_PEERS || 1)
     const metricsRegistry = options.metrics ?? metrics
     const runtimeCollector = options.runtimeMetricsCollector ?? createRuntimeMetricsCollector({ role })
-    const monitorConfig = loadHealthMonitorConfig(options.env)
+    const monitorConfig = loadHealthMonitorConfig(env)
     const startedAt = Date.now()
 
     if (!Number.isInteger(port) || port < 0 || port > 65535) {
         throw new Error('Health server port must be an integer between 0 and 65535')
     }
+    if (typeof configuredHost !== 'string' || configuredHost.trim() === '') {
+        throw new Error('HEALTH_HOST must be a non-empty string')
+    }
     if (!Number.isInteger(minPeers) || minPeers < 0) {
         throw new Error('HEALTH_MIN_PEERS must be a non-negative integer')
     }
+    const host = configuredHost.trim()
 
     const monitor = createHealthMonitor({
         checkTimeoutMs: options.checkTimeoutMs ?? monitorConfig.checkTimeoutMs,

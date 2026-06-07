@@ -14,7 +14,11 @@ describe("Runtime configuration validation", function () {
         const config = loadRuntimeConfig(validEnv);
 
         expect(config.logging).to.deep.equal({ level: "info" });
-        expect(config.health).to.deep.equal({ minPeers: 1, checkTimeoutMs: 2000 });
+        expect(config.health).to.deep.equal({
+            host: "127.0.0.1",
+            minPeers: 1,
+            checkTimeoutMs: 2000,
+        });
         expect(config.network.retry.maxAttempts).to.equal(3);
         expect(Object.isFrozen(config.network)).to.equal(true);
     });
@@ -28,6 +32,7 @@ describe("Runtime configuration validation", function () {
                 NETWORK_MAX_MESSAGE_BYTES: "0",
                 NETWORK_RATE_LIMIT_CAPACITY: "-1",
                 HEALTH_MIN_PEERS: "-1",
+                HEALTH_HOST: " ",
             });
         } catch (caught) {
             error = caught;
