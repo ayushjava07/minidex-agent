@@ -12,10 +12,15 @@ import { multiaddr }    from '@multiformats/multiaddr'
 import { createLogger } from './logger.js'
 import { loadRetryConfig, withRetry } from './retry.js'
 import {
-    createMessageEnvelope,
     loadMessageValidationConfig,
     parseMessage
 } from './message-schema.js'
+import {
+    createAuthenticatedEnvelope,
+    createReplayProtector,
+    loadMessageAuthConfig,
+    verifyMessageAuthentication
+} from './message-auth.js'
 
 // ── Constants ──────────────────────────────────────────
 const PROTOCOL    = '/atos/1.0.0'
@@ -37,6 +42,7 @@ const agentRegistry = new Map()
 
 // ── Topic handlers, isolated per node ──────────────────
 const topicHandlers = new WeakMap()
+const replayProtectors = new WeakMap()
 
 // ── Helpers ────────────────────────────────────────────
 function getUniquePeerCount(node) {
@@ -71,6 +77,7 @@ async function dialPeer(node, role, info) {
 
 // ─────────────────────────────────────────────────────────
 export async function createAgentNode(role) {
+    const authConfig = loadMessageAuthConfig()
     const port = AGENT_PORTS[role]
     if (!port) throw new Error(`Unknown role: ${role}`)
 
@@ -101,6 +108,8 @@ export async function createAgentNode(role) {
             }
             const raw     = chunks.map(c => toString(c)).join('')
             const message = parseMessage(raw, messageConfig)
+            verifyMessageAuthentication(message, authConfig.secret)
+            replayProtectors.get(node).assertFresh(message)
 
             logger.info('message_received', { role, topic: message.topic, from: message.from })
 
@@ -141,6 +150,7 @@ export async function createAgentNode(role) {
     })
 
     node.role = role
+    replayProtectors.set(node, createReplayProtector(authConfig))
 
     logger.info('agent_started', {
         role,
@@ -189,6 +199,7 @@ export async function connectToAllPeers(node) {
 
 // ─────────────────────────────────────────────────────────
 export async function publishMessage(node, topic, data) {
+    const authConfig = loadMessageAuthConfig()
     // Get existing connections
     let seen = new Set()
     let unique = node.getConnections().filter(c => {
@@ -220,7 +231,9 @@ export async function publishMessage(node, topic, data) {
         return { sent: 0, total: 0 }
     }
 
-    const payload = JSON.stringify(createMessageEnvelope(topic, data, node.role))
+    const payload = JSON.stringify(createAuthenticatedEnvelope(topic, data, node.role, {
+        config: authConfig
+    }))
 
     let sent = 0
 

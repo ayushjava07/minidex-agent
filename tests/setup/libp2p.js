@@ -1,5 +1,7 @@
 import { vi } from 'vitest'
 
+process.env.NETWORK_AUTH_SECRET ||= 'test-only-network-auth-secret-with-32-characters'
+
 vi.mock('libp2p', () => ({
   createLibp2p: vi.fn(),
 }))
