@@ -251,6 +251,25 @@ export const networkMetrics = Object.freeze({
     )
 })
 
+export const healthMetrics = Object.freeze({
+    checkStatus: metrics.gauge(
+        'atos_health_check_status',
+        'Current health check status where 1 is passing and 0 is failing.',
+        ['check', 'role']
+    ),
+    checkDuration: metrics.histogram(
+        'atos_health_check_duration_seconds',
+        'Health check execution duration in seconds.',
+        ['check', 'role'],
+        { buckets: [0.005, 0.025, 0.1, 0.5, 1, 2, 5] }
+    ),
+    readiness: metrics.gauge(
+        'atos_health_readiness',
+        'Current agent readiness where 1 is ready and 0 is not ready.',
+        ['role']
+    )
+})
+
 export function classifyMetricError(error) {
     const message = error?.message ?? ''
     if (error?.code === 'RATE_LIMITED') return 'rate_limit'
