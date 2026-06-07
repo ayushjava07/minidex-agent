@@ -9,9 +9,11 @@ import { Uint8ArrayList } from 'uint8arraylist'
 import { toString }     from 'uint8arrays/to-string'
 import { fromString }   from 'uint8arrays/from-string'
 import { multiaddr }    from '@multiformats/multiaddr'
+import { createLogger } from './logger.js'
 
 // ── Constants ──────────────────────────────────────────
 const PROTOCOL    = '/atos/1.0.0'
+const logger      = createLogger('network')
 
 const AGENT_PORTS = {
     deploy   : 4001,
@@ -29,8 +31,6 @@ const agentRegistry = new Map()
 const topicHandlers = new WeakMap()
 
 // ── Helpers ────────────────────────────────────────────
-const sleep = ms => new Promise(r => setTimeout(r, ms))
-
 function getUniquePeerCount(node) {
     const seen = new Set()
     return node.getConnections().filter(c => {
@@ -68,13 +68,13 @@ export async function createAgentNode(role) {
             const raw     = chunks.map(c => toString(c)).join('')
             const message = JSON.parse(raw)
 
-            console.log(`[Network][${role}] ← [${message.topic}] from [${message.from}]`)
+            logger.info('message_received', { role, topic: message.topic, from: message.from })
 
             const handlers = topicHandlers.get(node)?.get(message.topic)
             if (handlers) {
                 for (const h of handlers) {
                     try { await h(message.data) } catch (e) {
-                        console.error(`[Network] Handler error: ${e.message}`)
+                        logger.error('topic_handler_failed', { role, topic: message.topic, error: e })
                     }
                 }
             }
@@ -82,19 +82,19 @@ export async function createAgentNode(role) {
             await stream.close()
 
         } catch (err) {
-            console.error(`[Network][${role}] Handler error: ${err.message}`)
+            logger.error('message_handler_failed', { role, error: err })
         }
     })
 
     // ── Connection events ─────────────────────────────
     node.addEventListener('peer:connect', () => {
-        console.log(`[Network][${role}] ✅ Peers: ${getUniquePeerCount(node)}`)
+        logger.info('peer_connected', { role, peers: getUniquePeerCount(node) })
     })
 
     node.addEventListener('peer:disconnect', () => {
         const cnt = getUniquePeerCount(node)
         if (cnt === 0) return
-        console.log(`[Network][${role}] ❌ Peers: ${cnt}`)
+        logger.warn('peer_disconnected', { role, peers: cnt })
     })
 
     await node.start()
@@ -107,12 +107,12 @@ export async function createAgentNode(role) {
 
     node.role = role
 
-    console.log(`\n${'═'.repeat(52)}`)
-    console.log(` Agent    : ${role}`)
-    console.log(` PeerID   : ${node.peerId.toString()}`)
-    console.log(` Address  : /ip4/127.0.0.1/tcp/${port}`)
-    console.log(` Protocol : ${PROTOCOL}`)
-    console.log(`${'═'.repeat(52)}\n`)
+    logger.info('agent_started', {
+        role,
+        peerId: node.peerId.toString(),
+        address: `/ip4/127.0.0.1/tcp/${port}`,
+        protocol: PROTOCOL
+    })
 
     return node
 }
@@ -124,7 +124,7 @@ export async function connectToAllPeers(node) {
     const myRole = node.role
     const myPort = AGENT_PORTS[myRole]
 
-    console.log(`[Network][${myRole}] Connecting to all peers...`)
+    logger.info('peer_connection_started', { role: myRole })
 
     let connected = 0
 
@@ -141,14 +141,18 @@ export async function connectToAllPeers(node) {
 
             await node.dial(info.peerId)
 
-            console.log(`[Network][${myRole}] ✅ [${role}] at port ${info.port}`)
+            logger.info('peer_connection_succeeded', { role: myRole, peerRole: role, port: info.port })
             connected++
         } catch (err) {
-            console.log(`[Network][${myRole}] ⚠️  [${role}]: ${err.message.slice(0, 60)}`)
+            logger.warn('peer_connection_failed', { role: myRole, peerRole: role, port: info.port, error: err })
         }
     }
 
-    console.log(`[Network][${myRole}] Connected: ${connected}/${Object.keys(AGENT_PORTS).length - 1}\n`)
+    logger.info('peer_connection_completed', {
+        role: myRole,
+        connected,
+        expected: Object.keys(AGENT_PORTS).length - 1
+    })
     return connected
 }
 
@@ -178,12 +182,12 @@ export async function publishMessage(node, topic, data) {
             const conn = await node.dial(info.peerId)
             unique.push(conn)
         } catch (err) {
-            // Connection failed, skip this peer
+            logger.warn('peer_reconnect_failed', { role: node.role, peerRole: role, error: err })
         }
     }
 
     if (unique.length === 0) {
-        console.log(`[Network][${node.role}] ⚠️  No peers for [${topic}]`)
+        logger.warn('broadcast_no_peers', { role: node.role, topic })
         return { sent: 0, total: 0 }
     }
 
@@ -202,13 +206,22 @@ export async function publishMessage(node, topic, data) {
             stream.sendData(new Uint8ArrayList(fromString(payload)))
             await stream.close()
             sent++
-            console.log(`[Network][${node.role}] → [${topic}] → ${conn.remotePeer.toString().slice(0, 16)}...`)
+            logger.debug('message_sent', {
+                role: node.role,
+                topic,
+                peerId: conn.remotePeer.toString()
+            })
         } catch (err) {
-            console.log(`[Network][${node.role}] Send error: ${err.message.slice(0, 50)}`)
+            logger.warn('message_send_failed', {
+                role: node.role,
+                topic,
+                peerId: conn.remotePeer.toString(),
+                error: err
+            })
         }
     }
 
-    console.log(`[Network][${node.role}] Broadcast [${topic}]: ${sent}/${unique.length}`)
+    logger.info('broadcast_completed', { role: node.role, topic, sent, total: unique.length })
     return { sent, total: unique.length }
 }
 
@@ -222,7 +235,7 @@ export function subscribeToTopic(node, topic, handler) {
         nodeHandlers.set(topic, [])
     }
     nodeHandlers.get(topic).push(handler)
-    console.log(`[Network][${node.role}] Subscribed: ${topic}`)
+    logger.info('topic_subscribed', { role: node.role, topic })
 }
 
 // ─────────────────────────────────────────────────────────
