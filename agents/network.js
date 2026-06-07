@@ -11,14 +11,14 @@ import { fromString }   from 'uint8arrays/from-string'
 import { multiaddr }    from '@multiformats/multiaddr'
 import { createLogger } from './logger.js'
 import { classifyMetricError, networkMetrics } from './metrics.js'
-import { createRateLimiter, messageRateLimitKey } from './rate-limit.js'
+import { createRateLimiter } from './rate-limit.js'
 import { isTransientNetworkError, withRetry } from './retry.js'
 import { parseMessage } from './message-schema.js'
 import {
     createAuthenticatedEnvelope,
     createReplayProtector,
-    verifyMessageAuthentication
 } from './message-auth.js'
+import { createInboundSecurityMiddleware } from './message-middleware.js'
 import { loadRuntimeConfig } from '../config/runtime.js'
 
 // ── Constants ──────────────────────────────────────────
@@ -39,9 +39,8 @@ const agentRegistry = new Map()
 
 // ── Topic handlers, isolated per node ──────────────────
 const topicHandlers = new WeakMap()
-const replayProtectors = new WeakMap()
-const messageRateLimiters = new WeakMap()
 const runtimeConfigs = new WeakMap()
+const inboundSecurityMiddleware = new WeakMap()
 
 // ── Helpers ────────────────────────────────────────────
 function getUniquePeerCount(node) {
@@ -112,20 +111,7 @@ export async function createAgentNode(role) {
             }
             const raw     = chunks.map(c => toString(c)).join('')
             const message = parseMessage(raw, messageConfig)
-            verifyMessageAuthentication(message, authConfig.secret)
-            replayProtectors.get(node).assertFresh(message)
-            try {
-                messageRateLimiters.get(node).consume(messageRateLimitKey(message))
-            } catch (error) {
-                if (error.code === 'RATE_LIMITED') {
-                    networkMetrics.messagesRateLimited.inc({
-                        role,
-                        sender: message.from,
-                        topic: message.topic
-                    })
-                }
-                throw error
-            }
+            await inboundSecurityMiddleware.get(node)({ message })
 
             networkMetrics.messageBytes.observe({ direction: 'inbound', role }, receivedBytes)
             networkMetrics.messagesReceived.inc({ role, topic: message.topic })
@@ -176,8 +162,18 @@ export async function createAgentNode(role) {
     })
 
     node.role = role
-    replayProtectors.set(node, createReplayProtector(authConfig))
-    messageRateLimiters.set(node, createRateLimiter(rateLimitConfig))
+    const replayProtector = createReplayProtector(authConfig)
+    const messageRateLimiter = createRateLimiter(rateLimitConfig)
+    inboundSecurityMiddleware.set(node, createInboundSecurityMiddleware({
+        secret: authConfig.secret,
+        replayProtector,
+        rateLimiter: messageRateLimiter,
+        onRateLimited: ({ message }) => networkMetrics.messagesRateLimited.inc({
+            role,
+            sender: message.from,
+            topic: message.topic
+        })
+    }))
     runtimeConfigs.set(node, runtimeConfig)
     networkMetrics.connectedPeers.set({ role }, 0)
 
