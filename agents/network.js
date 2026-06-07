@@ -88,7 +88,9 @@ export async function createAgentNode(role) {
     })
 
     node.addEventListener('peer:disconnect', () => {
-        console.log(`[Network][${role}] ❌ Peers: ${getUniquePeerCount(node)}`)
+        const cnt = getUniquePeerCount(node)
+        if (cnt === 0) return
+        console.log(`[Network][${role}] ❌ Peers: ${cnt}`)
     })
 
     await node.start()
