@@ -35,4 +35,21 @@ describe("Agent health monitoring", function () {
         await expect(startHealthServer(createNode([]), { port: 0, minPeers: -1 }))
             .to.be.rejectedWith("HEALTH_MIN_PEERS must be a non-negative integer");
     });
+
+    it("uses the configured health host", async function () {
+        const previousHost = process.env.HEALTH_HOST;
+        process.env.HEALTH_HOST = "127.0.0.1";
+
+        try {
+            const server = await startHealthServer(createNode([]), { port: 0, minPeers: 0 });
+            expect(server.address().address).to.equal("127.0.0.1");
+            await server.stop();
+        } finally {
+            if (previousHost === undefined) {
+                delete process.env.HEALTH_HOST;
+            } else {
+                process.env.HEALTH_HOST = previousHost;
+            }
+        }
+    });
 });
