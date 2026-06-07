@@ -19,6 +19,7 @@ import {
     createReplayProtector,
 } from './message-auth.js'
 import { createInboundSecurityMiddleware } from './message-middleware.js'
+import { topicSchemas } from './topic-schema.js'
 import { loadRuntimeConfig } from '../config/runtime.js'
 
 // ── Constants ──────────────────────────────────────────
@@ -166,6 +167,7 @@ export async function createAgentNode(role) {
     const messageRateLimiter = createRateLimiter(rateLimitConfig)
     inboundSecurityMiddleware.set(node, createInboundSecurityMiddleware({
         secret: authConfig.secret,
+        topicSchemas,
         replayProtector,
         rateLimiter: messageRateLimiter,
         onRateLimited: ({ message }) => networkMetrics.messagesRateLimited.inc({
@@ -225,6 +227,7 @@ export async function connectToAllPeers(node) {
 // ─────────────────────────────────────────────────────────
 export async function publishMessage(node, topic, data) {
     const authConfig = (runtimeConfigs.get(node) ?? loadRuntimeConfig()).network.authentication
+    topicSchemas.validate({ topic, data })
     // Get existing connections
     let seen = new Set()
     let unique = node.getConnections().filter(c => {
