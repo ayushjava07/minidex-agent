@@ -17,7 +17,11 @@
     "check:secrets": "node scripts/checkSecrets.js",
     "test:network": "node scripts/testNetwork.js",
     "build": "npm run build:frontend",
-    "build:frontend": "npm run build --prefix frontend"
+    "build:frontend": "npm run build --prefix frontend",
+    "test:unit": "vitest run --config tests/vitest.config.js",
+    "test:unit:watch": "vitest --config tests/vitest.config.js",
+    "test:coverage": "vitest run --config tests/vitest.config.js --coverage",
+    "test:all": "npm run check:secrets && npm run test:contracts && npm run test:agents && npm run test:security && npm run test:unit && npm run test:network"
   },
   "keywords": [],
   "author": "",
@@ -35,6 +39,7 @@
     "@types/chai": "^4.3.20",
     "@types/mocha": "^10.0.10",
     "@types/node": "^22.19.17",
+    "@vitest/coverage-istanbul": "^4.1.8",
     "chai": "^4.5.0",
     "forge-std": "github:foundry-rs/forge-std#v1.9.4",
     "hardhat": "^2.28.6",
@@ -43,7 +48,8 @@
     "ts-node": "^10.9.2",
     "typechain": "^8.3.2",
     "typescript": "~5.8.0",
-    "viem": "^2.48.4"
+    "viem": "^2.48.4",
+    "vitest": "^4.1.8"
   },
   "dependencies": {
     "@chainsafe/libp2p-gossipsub": "^14.1.2",
