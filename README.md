@@ -117,6 +117,16 @@ npm run liquidity
 npm run analytics
 ```
 
+## Production Operations
+
+- Network logs are JSON; set `LOG_LEVEL` to `debug`, `info`, `warn`, or `error`.
+- Liveness and readiness are available at `/health/live` and `/health/ready`.
+- Health ports are `4101` through `4105` in agent role order.
+- `HEALTH_MIN_PEERS` controls readiness.
+- Peer dials use bounded backoff configured by the `NETWORK_RETRY_*` variables.
+- Inbound messages are rejected when they violate the envelope schema or exceed
+  `NETWORK_MAX_MESSAGE_BYTES`.
+
 ## Frontend
 
 https://minidex-agent.vercel.app

@@ -11,11 +11,17 @@ import { fromString }   from 'uint8arrays/from-string'
 import { multiaddr }    from '@multiformats/multiaddr'
 import { createLogger } from './logger.js'
 import { loadRetryConfig, withRetry } from './retry.js'
+import {
+    createMessageEnvelope,
+    loadMessageValidationConfig,
+    parseMessage
+} from './message-schema.js'
 
 // ── Constants ──────────────────────────────────────────
 const PROTOCOL    = '/atos/1.0.0'
 const logger      = createLogger('network')
 const retryConfig = loadRetryConfig()
+const messageConfig = loadMessageValidationConfig()
 
 const AGENT_PORTS = {
     deploy   : 4001,
@@ -84,11 +90,17 @@ export async function createAgentNode(role) {
     await node.handle(PROTOCOL, async (stream) => {
         try {
             const chunks = []
+            let receivedBytes = 0
             for await (const chunk of stream) {
-                chunks.push(chunk instanceof Uint8ArrayList ? chunk.subarray() : chunk)
+                const bytes = chunk instanceof Uint8ArrayList ? chunk.subarray() : chunk
+                receivedBytes += bytes.byteLength
+                if (receivedBytes > messageConfig.maxMessageBytes) {
+                    throw new Error(`Message exceeds maximum size of ${messageConfig.maxMessageBytes} bytes`)
+                }
+                chunks.push(bytes)
             }
             const raw     = chunks.map(c => toString(c)).join('')
-            const message = JSON.parse(raw)
+            const message = parseMessage(raw, messageConfig)
 
             logger.info('message_received', { role, topic: message.topic, from: message.from })
 
@@ -100,11 +112,12 @@ export async function createAgentNode(role) {
                     }
                 }
             }
-
-            await stream.close()
-
         } catch (err) {
             logger.error('message_handler_failed', { role, error: err })
+        } finally {
+            await stream.close().catch(error => {
+                logger.warn('message_stream_close_failed', { role, error })
+            })
         }
     })
 
@@ -207,12 +220,7 @@ export async function publishMessage(node, topic, data) {
         return { sent: 0, total: 0 }
     }
 
-    const payload = JSON.stringify({
-        topic,
-        data,
-        from : node.role,
-        ts   : Date.now()
-    })
+    const payload = JSON.stringify(createMessageEnvelope(topic, data, node.role))
 
     let sent = 0
 
