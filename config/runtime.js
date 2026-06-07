@@ -12,8 +12,16 @@ function nonNegativeInteger(value, name) {
     return value
 }
 
+function nonEmptyString(value, name) {
+    if (typeof value !== 'string' || value.trim() === '') {
+        throw new Error(`${name} must be a non-empty string`)
+    }
+    return value.trim()
+}
+
 function loadHealthConfig(env) {
     return Object.freeze({
+        host: nonEmptyString(env.HEALTH_HOST || '127.0.0.1', 'HEALTH_HOST'),
         minPeers: nonNegativeInteger(Number(env.HEALTH_MIN_PEERS || 1), 'HEALTH_MIN_PEERS'),
         ...loadHealthMonitorConfig(env)
     })

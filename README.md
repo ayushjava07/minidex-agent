@@ -131,7 +131,7 @@ npm run analytics
 - Prometheus metrics are available at `/metrics` on each agent health port.
 - Runtime metrics include process uptime, memory, CPU deltas, and event-loop lag.
 - Health ports are `4101` through `4105` in agent role order.
-- `HEALTH_MIN_PEERS` controls readiness.
+- `HEALTH_MIN_PEERS` controls readiness, while `HEALTH_HOST` selects the health endpoint bind interface.
 - Readiness runs timeout-bound dependency checks; optional check failures report `degraded`
   without removing the agent from service.
 - Peer dials use bounded backoff configured by the `NETWORK_RETRY_*` variables.
