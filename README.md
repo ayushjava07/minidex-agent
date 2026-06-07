@@ -134,6 +134,7 @@ npm run analytics
 - Readiness runs timeout-bound dependency checks; optional check failures report `degraded`
   without removing the agent from service.
 - Peer dials use bounded backoff configured by the `NETWORK_RETRY_*` variables.
+- Peer retry delays include jitter, skip permanent failures, and support cancellation.
 - Inbound messages are rejected when they violate the envelope schema or exceed
   `NETWORK_MAX_MESSAGE_BYTES`.
 - Authenticated inbound messages use per-sender and per-topic token buckets configured
