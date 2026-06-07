@@ -56,6 +56,19 @@ describe('network.js — createAgentNode', () => {
       expect(agentRegistry.get(role).port).toBe(AGENT_PORTS[role])
     }
   })
+
+  it('should unregister a stopped node without removing a newer replacement', async () => {
+    const { createAgentNode, agentRegistry } = network
+    const original = await createAgentNode('monitor')
+    const replacement = await createAgentNode('monitor')
+
+    await original.stop()
+    expect(agentRegistry.get('monitor').peerId).toBe(replacement.peerId)
+
+    await replacement.stop()
+    await replacement.stop()
+    expect(agentRegistry.has('monitor')).toBe(false)
+  })
 })
 
 describe('network.js — connectToAllPeers', () => {
