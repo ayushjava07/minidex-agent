@@ -84,6 +84,9 @@ cp .env.example .env
 
 See [Secrets Management](docs/secrets.md) for configuration validation, credential rotation, production secret storage, and Git history cleanup.
 
+See the [Threat Model](docs/threat-model.md) and
+[Deployment Runbook](docs/deployment-runbook.md) before production rollout.
+
 ### Deploy
 
 ```bash
