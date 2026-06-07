@@ -72,7 +72,11 @@ export async function createAgentNode(role) {
 
             const handlers = topicHandlers.get(node)?.get(message.topic)
             if (handlers) {
-                for (const h of handlers) h(message.data)
+                for (const h of handlers) {
+                    try { await h(message.data) } catch (e) {
+                        console.error(`[Network] Handler error: ${e.message}`)
+                    }
+                }
             }
 
             await stream.close()
