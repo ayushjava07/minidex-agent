@@ -1,7 +1,10 @@
 import { createAgentNode, publishMessage, subscribeToTopic } from './network.js'
 import { logTask, logExecution, printDAG } from './ipld-logger.js'
 import { generateKeys, encryptMessage } from './pqc.js'
+import { loadDeploymentAddressConfig } from '../config/env.js'
 import 'dotenv/config'
+
+const deployment = loadDeploymentAddressConfig()
 
 let rootTaskCID = null
 
@@ -65,9 +68,9 @@ async function main() {
         explanation: 'ERC20 tokens and MiniDEX deployed and verified on Sepolia testnet',
         inputs:      { network: 'sepolia', contracts: ['TokenA', 'TokenB', 'MiniDEX'] },
         outputs:     {
-            tokenA: process.env.TOKEN_A,
-            tokenB: process.env.TOKEN_B,
-            dex:    process.env.DEX_ADDRESS
+            tokenA: deployment.tokenA,
+            tokenB: deployment.tokenB,
+            dex:    deployment.dexAddress
         },
         parentCID: rootTaskCID
     })
@@ -88,9 +91,9 @@ async function main() {
         const encrypted = encryptMessage('monitor', JSON.stringify({
             type: 'DEPLOY_COMPLETE',
             contracts: {
-                tokenA: process.env.TOKEN_A,
-                tokenB: process.env.TOKEN_B,
-                dex:    process.env.DEX_ADDRESS
+                tokenA: deployment.tokenA,
+                tokenB: deployment.tokenB,
+                dex:    deployment.dexAddress
             }
         }))
 
