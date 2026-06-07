@@ -10,7 +10,12 @@
     "liquidity": "node agents/liquidity-agent.js",
     "analytics": "node agents/analytics-agent.js",
     "agents": "concurrently \"npm run deploy\" \"npm run monitor\" \"npm run report\" \"npm run liquidity\" \"npm run analytics\"",
-    "test:network": "node scripts/testNetwork.js"
+    "test": "npm run test:contracts && npm run test:agents && npm run test:network",
+    "test:contracts": "hardhat test test/MiniDEX.test.js test/Security.test.js test/TokenA.test.js test/TokenB.test.js",
+    "test:agents": "hardhat test test/IPLD.test.js test/PQC.test.js",
+    "test:network": "node scripts/testNetwork.js",
+    "build": "npm run build:frontend",
+    "build:frontend": "npm run build --prefix frontend"
   },
   "keywords": [],
   "author": "",
