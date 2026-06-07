@@ -1,7 +1,8 @@
 import http from 'node:http'
 import { getNetworkStatus } from './network.js'
 import { createLogger } from './logger.js'
-import { metrics } from './metrics.js'
+import { createHealthMonitor, loadHealthMonitorConfig } from './health-monitor.js'
+import { healthMetrics, metrics } from './metrics.js'
 
 const logger = createLogger('health')
 
@@ -29,6 +30,7 @@ export async function startHealthServer(node, options = {}) {
     const host = options.host ?? '127.0.0.1'
     const minPeers = options.minPeers ?? Number(process.env.HEALTH_MIN_PEERS || 1)
     const metricsRegistry = options.metrics ?? metrics
+    const monitorConfig = loadHealthMonitorConfig(options.env)
     const startedAt = Date.now()
 
     if (!Number.isInteger(port) || port < 0 || port > 65535) {
@@ -38,7 +40,24 @@ export async function startHealthServer(node, options = {}) {
         throw new Error('HEALTH_MIN_PEERS must be a non-negative integer')
     }
 
-    const server = http.createServer((request, response) => {
+    const monitor = createHealthMonitor({
+        checkTimeoutMs: options.checkTimeoutMs ?? monitorConfig.checkTimeoutMs,
+        checks: [
+            {
+                name: 'network',
+                check: () => {
+                    const network = getNetworkStatus(node)
+                    if (network.peers < minPeers) {
+                        throw new Error(`Connected peers ${network.peers} below required minimum ${minPeers}`)
+                    }
+                    return { peers: network.peers, requiredPeers: minPeers }
+                }
+            },
+            ...(options.checks ?? [])
+        ]
+    })
+
+    const server = http.createServer(async (request, response) => {
         const network = getNetworkStatus(node)
         const base = {
             role,
@@ -53,9 +72,15 @@ export async function startHealthServer(node, options = {}) {
         }
 
         if (request.url === '/health/ready') {
-            const ready = network.peers >= minPeers
-            sendJson(response, ready ? 200 : 503, {
-                status: ready ? 'ready' : 'not_ready',
+            const result = await monitor.evaluate()
+            for (const check of result.checks) {
+                healthMetrics.checkStatus.set({ check: check.name, role }, check.status === 'pass' ? 1 : 0)
+                healthMetrics.checkDuration.observe({ check: check.name, role }, check.latencyMs / 1000)
+            }
+            healthMetrics.readiness.set({ role }, result.ready ? 1 : 0)
+            sendJson(response, result.ready ? 200 : 503, {
+                status: result.status,
+                checks: result.checks,
                 ...base
             })
             return
@@ -79,6 +104,8 @@ export async function startHealthServer(node, options = {}) {
 
     return Object.freeze({
         address: () => server.address(),
+        check: () => monitor.evaluate(),
+        registerCheck: check => monitor.register(check),
         stop: () => new Promise((resolve, reject) => {
             server.close(error => error ? reject(error) : resolve())
         })
