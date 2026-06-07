@@ -2,6 +2,7 @@ import { createAgentNode, publishMessage, subscribeToTopic } from './network.js'
 import { logTask, logExecution, printDAG } from './ipld-logger.js'
 import { generateKeys, encryptMessage } from './pqc.js'
 import { loadDeploymentAddressConfig } from '../config/env.js'
+import { startHealthServer } from './health.js'
 import 'dotenv/config'
 
 const deployment = loadDeploymentAddressConfig()
@@ -33,6 +34,7 @@ async function main() {
     console.log("=== Deploy Agent v2 ===")
 
     const node = await createAgentNode('deploy')
+    const health = await startHealthServer(node)
 
     const myKeys = generateKeys('deploy')
     console.log('[PQC] Deploy agent keys ready')
@@ -97,63 +99,48 @@ async function main() {
             }
         }))
 
-        // null check
-        if (encrypted) {
-            await publishMessage(node, 'agent-tasks', {
-                type:             'DEPLOY_COMPLETE',
-                from:             node.peerId.toString(),
-                targetRole:       'monitor', 
-                cipherText:       encrypted.cipherText,
-                encryptedMessage: encrypted.encryptedMessage,
-                iv:               encrypted.iv,
-                cid:              deployTaskCID,
-                timestamp:        new Date().toISOString()
-            })
+        await publishMessage(node, 'agent-tasks', {
+            type:             'DEPLOY_COMPLETE',
+            from:             node.peerId.toString(),
+            targetRole:       'monitor',
+            cipherText:       encrypted.cipherText,
+            encryptedMessage: encrypted.encryptedMessage,
+            iv:               encrypted.iv,
+            cid:              deployTaskCID,
+            timestamp:        new Date().toISOString()
+        })
 
-            const pqcTaskCID = await logTask({
-                peerId:      node.peerId.toString(),
-                agent:       'deploy',
-                workflow:    'pqc-encrypted-broadcast',
-                status:      'completed',
-                explanation: 'Deploy complete signal encrypted with ML-KEM-768 + AES-256-CBC and sent to monitor',
-                inputs:      { targetAgent: 'monitor', algorithm: 'ML-KEM-768 + AES-256-CBC' },
-                parentCID:   deployTaskCID
-            })
+        const pqcTaskCID = await logTask({
+            peerId:      node.peerId.toString(),
+            agent:       'deploy',
+            workflow:    'pqc-encrypted-broadcast',
+            status:      'completed',
+            explanation: 'Deploy complete signal encrypted with ML-KEM-768 + AES-256-CBC and sent to monitor',
+            inputs:      { targetAgent: 'monitor', algorithm: 'ML-KEM-768 + AES-256-CBC' },
+            parentCID:   deployTaskCID
+        })
 
-            await logExecution({
-                peerId:  node.peerId.toString(),
-                taskCID: pqcTaskCID,
-                event:   'pqc_message_sent',
-                agent:   'deploy',
-                outcome: 'success'
-            })
+        await logExecution({
+            peerId:  node.peerId.toString(),
+            taskCID: pqcTaskCID,
+            event:   'pqc_message_sent',
+            agent:   'deploy',
+            outcome: 'success'
+        })
 
-            console.log('[PQC] Encrypted message sent to monitor')
-
-        } else {
-            // Monitor key not found - send plain
-            await publishMessage(node, 'agent-tasks', {
-                type:      'DEPLOY_COMPLETE',
-                from:      node.peerId.toString(),
-                cid:       deployTaskCID,
-                timestamp: new Date().toISOString()
-            })
-
-            await logTask({
-                peerId:      node.peerId.toString(),
-                agent:       'deploy',
-                workflow:    'pqc-encrypted-broadcast',
-                status:      'failed',
-                explanation: 'Monitor public key not available yet - sent plain message as fallback',
-                inputs:      { targetAgent: 'monitor', algorithm: 'ML-KEM-768 + AES-256-CBC' },
-                parentCID:   deployTaskCID
-            })
-
-            console.log('[PQC] Monitor key not ready - plain message sent')
-        }
+        console.log('[PQC] Encrypted message sent to monitor')
 
     } catch(err) {
-        console.log('[PQC] Error:', err.message)
+        await logTask({
+            peerId:      node.peerId.toString(),
+            agent:       'deploy',
+            workflow:    'pqc-encrypted-broadcast',
+            status:      'failed',
+            explanation: 'Encrypted deploy signal could not be sent; plaintext fallback is disabled',
+            inputs:      { targetAgent: 'monitor', algorithm: 'ML-KEM-768 + AES-256-CBC' },
+            parentCID:   deployTaskCID
+        })
+        console.log('[PQC] Deploy signal withheld:', err.message)
     }
 
     // Workflow 3: Peer registration
@@ -198,6 +185,7 @@ async function main() {
         })
 
         console.log('\nStopping Deploy Agent...')
+        await health.stop()
         await node.stop()
         process.exit(0)
     }

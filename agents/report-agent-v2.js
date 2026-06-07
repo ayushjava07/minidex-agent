@@ -2,6 +2,7 @@ import { createAgentNode, publishMessage, subscribeToTopic } from './network.js'
 import { logTask, logExecution, getFullDAG, printDAG } from './ipld-logger.js'
 import { generateKeys, encryptMessage, decryptMessage } from './pqc.js'
 import { loadReadOnlyAgentConfig } from '../config/env.js'
+import { startHealthServer } from './health.js'
 import { ethers } from 'ethers'
 import 'dotenv/config'
 
@@ -72,6 +73,7 @@ async function main() {
     console.log("=== Report Agent v2 ===")
 
     const node = await createAgentNode('report')
+    const health = await startHealthServer(node)
 
     // PQC keys banaye
     const myKeys = generateKeys('report')
@@ -171,11 +173,11 @@ async function main() {
                     })
 
                     // Turant check kare
-                    await monitorPool(node, 'report-covering-monitor')
+                    await monitorPool(node, 'report-covering-monitor').catch(err => console.error('[Report] Backup monitor error:', err.message))
 
                     // Har 10 second
                     backupMonitoring = setInterval(() => {
-                        monitorPool(node, 'report-covering-monitor')
+                        monitorPool(node, 'report-covering-monitor').catch(err => console.error('[Report] Backup monitor error:', err.message))
                     }, 10000)
                 }
 
@@ -213,6 +215,7 @@ async function main() {
         })
 
         console.log('\nStopping Report Agent...')
+        await health.stop()
         await node.stop()
         process.exit(0)
     }

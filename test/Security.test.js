@@ -23,7 +23,7 @@ describe("MiniDEX Security & Edge Cases", function () {
   });
 
   describe("Liquidity Management", function () {
-    it("Should allow ANYONE to remove liquidity (Design Observation)", async function () {
+    it("Should prevent non-providers from removing liquidity", async function () {
       const amountA = ethers.parseEther("100");
       const amountB = ethers.parseEther("100");
 
@@ -32,35 +32,59 @@ describe("MiniDEX Security & Edge Cases", function () {
       await tokenB.connect(user1).approve(await dex.getAddress(), amountB);
       await dex.connect(user1).addLiquidity(amountA, amountB);
 
-      // User2 (who added nothing) removes liquidity
-      const user2InitialA = await tokenA.balanceOf(user2.address);
-      const user2InitialB = await tokenB.balanceOf(user2.address);
+      await expect(
+        dex.connect(user2).removeLiquidity(amountA, amountB)
+      ).to.be.revertedWith("Insufficient liquidity A");
 
-      await dex.connect(user2).removeLiquidity(amountA, amountB);
-
-      expect(await tokenA.balanceOf(user2.address)).to.equal(user2InitialA + amountA);
-      expect(await tokenB.balanceOf(user2.address)).to.equal(user2InitialB + amountB);
-      
       const [resA, resB] = await dex.getReserves();
-      expect(resA).to.equal(0);
-      expect(resB).to.equal(0);
+      expect(resA).to.equal(amountA);
+      expect(resB).to.equal(amountB);
     });
 
-    it("Should fail to remove more liquidity than available", async function () {
+    it("Should only allow providers to remove their deposited amounts", async function () {
       const amountA = ethers.parseEther("100");
       const amountB = ethers.parseEther("100");
 
-      await tokenA.approve(await dex.getAddress(), amountA);
-      await tokenB.approve(await dex.getAddress(), amountB);
-      await dex.addLiquidity(amountA, amountB);
+      await tokenA.connect(user1).approve(await dex.getAddress(), amountA);
+      await tokenB.connect(user1).approve(await dex.getAddress(), amountB);
+      await dex.connect(user1).addLiquidity(amountA, amountB);
 
       await expect(
-          dex.removeLiquidity(amountA + 1n, amountB)
-      ).to.be.revertedWith("Not enough A");
+        dex.connect(user1).removeLiquidity(amountA + 1n, amountB)
+      ).to.be.revertedWith("Insufficient liquidity A");
 
       await expect(
-          dex.removeLiquidity(amountA, amountB + 1n)
-      ).to.be.revertedWith("Not enough B");
+        dex.connect(user1).removeLiquidity(amountA, amountB + 1n)
+      ).to.be.revertedWith("Insufficient liquidity B");
+
+      await expect(dex.connect(user1).removeLiquidity(amountA, amountB))
+        .to.emit(dex, "LiquidityRemoved")
+        .withArgs(user1.address, amountA, amountB);
+
+      expect(await dex.liquidityA(user1.address)).to.equal(0);
+      expect(await dex.liquidityB(user1.address)).to.equal(0);
+    });
+
+    it("Should isolate liquidity balances between providers", async function () {
+      const userAmount = ethers.parseEther("100");
+      const ownerAmount = ethers.parseEther("250");
+
+      await tokenA.connect(user1).approve(await dex.getAddress(), userAmount);
+      await tokenB.connect(user1).approve(await dex.getAddress(), userAmount);
+      await dex.connect(user1).addLiquidity(userAmount, userAmount);
+
+      await tokenA.approve(await dex.getAddress(), ownerAmount);
+      await tokenB.approve(await dex.getAddress(), ownerAmount);
+      await dex.addLiquidity(ownerAmount, ownerAmount);
+
+      await dex.connect(user1).removeLiquidity(userAmount, userAmount);
+
+      expect(await dex.liquidityA(owner.address)).to.equal(ownerAmount);
+      expect(await dex.liquidityB(owner.address)).to.equal(ownerAmount);
+
+      const [resA, resB] = await dex.getReserves();
+      expect(resA).to.equal(ownerAmount);
+      expect(resB).to.equal(ownerAmount);
     });
   });
 

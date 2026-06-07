@@ -2,22 +2,15 @@ import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
   test: {
-    globals: true,
+    include: ['tests/unit/**', 'tests/integration/**'],
+    exclude: ['node_modules', 'test'],
     environment: 'node',
-    include: ['tests/unit/**/*.test.js', 'tests/integration/**/*.test.js'],
-    exclude: ['test/**', 'node_modules/**'],
-    setupFiles: [],
+    globals: false,
     coverage: {
       provider: 'istanbul',
-      include: ['agents/**'],
-      exclude: ['agents/keys/**', 'agents/execution-log.json', 'agents/task-log.json'],
-      reporter: ['text', 'json', 'html'],
+      include: ['agents/**/*.js'],
+      exclude: ['agents/secret-manager.js'],
       reportsDirectory: 'tests/coverage',
-    },
-    testTimeout: 15000,
-    hookTimeout: 15000,
-    sequence: {
-      concurrent: false,
     },
   },
 })

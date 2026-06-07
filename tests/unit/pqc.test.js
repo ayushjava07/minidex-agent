@@ -13,6 +13,7 @@ const virtualFs = vi.hoisted(() => {
       store[p] = typeof data === 'string' ? data : JSON.stringify(data, null, 2)
     },
     mkdirSync: () => {},
+    chmodSync: () => {},
     readdirSync: () => [],
   }
 })
@@ -22,12 +23,14 @@ vi.mock('fs', () => ({
   readFileSync: virtualFs.readFileSync,
   writeFileSync: virtualFs.writeFileSync,
   mkdirSync: virtualFs.mkdirSync,
+  chmodSync: virtualFs.chmodSync,
   readdirSync: virtualFs.readdirSync,
   default: {
     existsSync: virtualFs.existsSync,
     readFileSync: virtualFs.readFileSync,
     writeFileSync: virtualFs.writeFileSync,
     mkdirSync: virtualFs.mkdirSync,
+    chmodSync: virtualFs.chmodSync,
     readdirSync: virtualFs.readdirSync,
   },
 }))
@@ -82,10 +85,11 @@ describe('pqc.js', () => {
   })
 
   describe('encryptMessage', () => {
-    it('should return null when no public key exists for target', async () => {
+    it('should fail closed when no public key exists for target', async () => {
       const { encryptMessage } = await import('../../agents/pqc.js')
-      const result = encryptMessage('nonexistent-role', 'hello')
-      expect(result).toBeNull()
+      expect(() => encryptMessage('nonexistent-role', 'hello')).toThrow(
+        '[PQC] Public key not found for [nonexistent-role]'
+      )
     })
 
     it('should encrypt a message for a known role', async () => {

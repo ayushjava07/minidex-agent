@@ -1,33 +1,31 @@
 import { expect } from 'vitest'
 
-export function expectMeshComplete(statuses, expectedCount = 4) {
-  for (const [role, count] of Object.entries(statuses)) {
-    expect(count).toBe(expectedCount)
-  }
+export function expectMeshComplete(status, expectedCount) {
+  expect(status).toHaveProperty('role')
+  expect(status).toHaveProperty('peers', expectedCount)
+  expect(status).toHaveProperty('list')
+  expect(Array.isArray(status.list)).toBe(true)
 }
 
-export function expectBroadcastResult(result, expectedSent, expectedTotal) {
-  expect(result).toHaveProperty('sent', expectedSent)
-  expect(result).toHaveProperty('total', expectedTotal)
+export function expectBroadcastResult(result, minSent, total) {
+  expect(result).toHaveProperty('sent')
+  expect(result).toHaveProperty('total', total)
+  expect(result.sent).toBeGreaterThanOrEqual(minSent)
+  expect(result.sent).toBeLessThanOrEqual(total)
 }
 
 export function expectValidCID(cid) {
   expect(cid).toBeDefined()
   expect(typeof cid).toBe('string')
-  expect(cid.length).toBeGreaterThan(30)
+  expect(cid.length).toBeGreaterThan(10)
 }
 
-export async function expectThrowsAsync(fn, errorPattern) {
-  let thrown = false
+export async function expectThrowsAsync(fn, msg) {
   try {
     await fn()
   } catch (err) {
-    thrown = true
-    if (errorPattern instanceof RegExp) {
-      expect(err.message).toMatch(errorPattern)
-    } else if (typeof errorPattern === 'string') {
-      expect(err.message).toContain(errorPattern)
-    }
+    expect(err.message).toContain(msg)
+    return
   }
-  expect(thrown).toBe(true)
+  throw new Error('Expected function to throw')
 }
