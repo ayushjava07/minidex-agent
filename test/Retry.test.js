@@ -6,6 +6,7 @@ import {
     loadRetryConfig,
     withRetry,
 } from "../agents/retry.js";
+import { CircuitOpenError, createCircuitBreaker } from "../agents/circuit-breaker.js";
 
 describe("Retry and backoff", function () {
     it("retries transient failures with bounded exponential delays", async function () {
@@ -114,5 +115,64 @@ describe("Retry and backoff", function () {
             successes: 1,
             failures: 0,
         });
+    });
+
+    it("opens a circuit after repeated failures and recovers through half-open", async function () {
+        let now = 1000;
+        const transitions = [];
+        const breaker = createCircuitBreaker({
+            failureThreshold: 2,
+            resetTimeoutMs: 100,
+            clock: () => now,
+            onStateChange: snapshot => transitions.push(snapshot.state),
+        });
+
+        const fail = () => breaker.execute(async () => { throw new Error("down"); });
+        await expect(fail()).to.be.rejectedWith("down");
+        await expect(fail()).to.be.rejectedWith("down");
+
+        let error;
+        try {
+            await breaker.execute(async () => "blocked");
+        } catch (caught) {
+            error = caught;
+        }
+        expect(error).to.be.instanceOf(CircuitOpenError);
+        expect(error.retryAfterMs).to.equal(100);
+
+        now += 100;
+        expect(await breaker.execute(async () => "recovered")).to.equal("recovered");
+        expect(breaker.snapshot().state).to.equal("closed");
+        expect(transitions).to.deep.equal(["open", "half_open", "closed"]);
+    });
+
+    it("allows only one half-open probe at a time", async function () {
+        let now = 0;
+        let release;
+        const breaker = createCircuitBreaker({
+            failureThreshold: 1,
+            resetTimeoutMs: 10,
+            clock: () => now,
+        });
+        await expect(breaker.execute(async () => { throw new Error("down"); })).to.be.rejected;
+        now = 10;
+        const probe = breaker.execute(() => new Promise(resolve => { release = resolve; }));
+
+        await expect(breaker.execute(async () => "second")).to.be.rejectedWith("Circuit breaker is open");
+        release("first");
+        expect(await probe).to.equal("first");
+    });
+
+    it("integrates circuit state with retry managers", async function () {
+        const breaker = createCircuitBreaker({ failureThreshold: 1 });
+        const manager = createRetryManager({
+            maxAttempts: 1,
+            circuitBreaker: breaker,
+        });
+
+        await expect(manager.execute(async () => { throw new Error("offline"); })).to.be.rejectedWith("offline");
+        await expect(manager.execute(async () => "blocked")).to.be.rejectedWith("Circuit breaker is open");
+        expect(manager.circuit().state).to.equal("open");
+        expect(manager.stats()).to.include({ operations: 2, failures: 2 });
     });
 });

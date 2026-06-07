@@ -115,14 +115,19 @@ export async function withRetry(operation, options = {}) {
 
 export function createRetryManager(defaults = {}) {
     const stats = { operations: 0, retries: 0, successes: 0, failures: 0 }
+    const circuitBreaker = defaults.circuitBreaker
+    if (circuitBreaker !== undefined && typeof circuitBreaker.execute !== 'function') {
+        throw new Error('circuitBreaker must provide an execute function')
+    }
 
     return Object.freeze({
         async execute(operation, options = {}) {
             stats.operations++
             try {
-                const result = await withRetry(operation, {
+                const executeWithRetry = () => withRetry(operation, {
                     ...defaults,
                     ...options,
+                    circuitBreaker: undefined,
                     onRetry(event) {
                         stats.retries++
                         defaults.onRetry?.(event)
@@ -133,6 +138,9 @@ export function createRetryManager(defaults = {}) {
                         options.onGiveUp?.(event)
                     }
                 })
+                const result = circuitBreaker
+                    ? await circuitBreaker.execute(executeWithRetry)
+                    : await executeWithRetry()
                 stats.successes++
                 return result
             } catch (error) {
@@ -142,6 +150,7 @@ export function createRetryManager(defaults = {}) {
         },
         stats() {
             return Object.freeze({ ...stats })
-        }
+        },
+        circuit: () => circuitBreaker?.snapshot()
     })
 }
