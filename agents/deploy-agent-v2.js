@@ -2,6 +2,7 @@ import { createAgentNode, publishMessage, subscribeToTopic } from './network.js'
 import { logTask, logExecution, printDAG } from './ipld-logger.js'
 import { generateKeys, encryptMessage } from './pqc.js'
 import { loadDeploymentAddressConfig } from '../config/env.js'
+import { startHealthServer } from './health.js'
 import 'dotenv/config'
 
 const deployment = loadDeploymentAddressConfig()
@@ -33,6 +34,7 @@ async function main() {
     console.log("=== Deploy Agent v2 ===")
 
     const node = await createAgentNode('deploy')
+    const health = await startHealthServer(node)
 
     const myKeys = generateKeys('deploy')
     console.log('[PQC] Deploy agent keys ready')
@@ -198,6 +200,7 @@ async function main() {
         })
 
         console.log('\nStopping Deploy Agent...')
+        await health.stop()
         await node.stop()
         process.exit(0)
     }

@@ -233,6 +233,10 @@ agent reaches all four peers and every test broadcast reaches all four recipient
 Agent network logs are emitted as JSON. Set `LOG_LEVEL` to `debug`, `info`,
 `warn`, or `error` to control verbosity.
 
+Each agent exposes `GET /health/live` and `GET /health/ready` on localhost.
+Default ports are `4101` through `4105` for deploy, monitor, report, liquidity,
+and analytics respectively. Readiness requires `HEALTH_MIN_PEERS` connections.
+
 ---
 
 ### 💧 Add Liquidity
