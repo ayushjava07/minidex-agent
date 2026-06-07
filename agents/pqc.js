@@ -3,31 +3,53 @@ import { createCipheriv, createDecipheriv, randomBytes } from 'crypto'
 import fs from 'fs'
 import path from 'path'
 
-const KEYS_DIR = path.join(process.cwd(), 'agents', 'keys')
+function getKeysDir() {
+    return process.env.AGENT_KEYS_DIR
+        ? path.resolve(process.env.AGENT_KEYS_DIR)
+        : path.join(process.cwd(), 'agents', 'keys')
+}
+
+function getPublicKeysFile() {
+    return process.env.AGENT_PUBLIC_KEYS_FILE
+        ? path.resolve(process.env.AGENT_PUBLIC_KEYS_FILE)
+        : path.join(process.cwd(), 'agents', 'public-keys.json')
+}
 
 // ─── Key persistence ────────────────────────────────────────────────────────────
 // genration of key for the first time and saving it to disk, subsequent calls will load the same keys
 // on restart agents will load the same keys and share public keys again to ensure they are available for peers
 function saveKeys(role, publicKey, secretKey) {
-    if (!fs.existsSync(KEYS_DIR)) {
-        fs.mkdirSync(KEYS_DIR, { recursive: true })
+    const keysDir = getKeysDir()
+    if (!fs.existsSync(keysDir)) {
+        fs.mkdirSync(keysDir, { recursive: true, mode: 0o700 })
+    }
+    if (typeof fs.chmodSync === 'function') {
+        fs.chmodSync(keysDir, 0o700)
     }
 
+    const publicKeyPath = path.join(keysDir, `${role}-public.key`)
+    const secretKeyPath = path.join(keysDir, `${role}-secret.key`)
     fs.writeFileSync(
-        path.join(KEYS_DIR, `${role}-public.key`),
-        Buffer.from(publicKey)
+        publicKeyPath,
+        Buffer.from(publicKey),
+        { mode: 0o644 }
     )
     fs.writeFileSync(
-        path.join(KEYS_DIR, `${role}-secret.key`),
-        Buffer.from(secretKey)
+        secretKeyPath,
+        Buffer.from(secretKey),
+        { mode: 0o600 }
     )
+    if (typeof fs.chmodSync === 'function') {
+        fs.chmodSync(secretKeyPath, 0o600)
+    }
 
     console.log(`[PQC] Keys saved for [${role}]`)
 }
 
 function loadKeys(role) {
-    const pubPath = path.join(KEYS_DIR, `${role}-public.key`)
-    const secPath = path.join(KEYS_DIR, `${role}-secret.key`)
+    const keysDir = getKeysDir()
+    const pubPath = path.join(keysDir, `${role}-public.key`)
+    const secPath = path.join(keysDir, `${role}-secret.key`)
 
     if (!fs.existsSync(pubPath) || !fs.existsSync(secPath)) {
         return null
@@ -41,26 +63,25 @@ function loadKeys(role) {
 
 // ─── Share public keys ────────────────────────────────────────────────────────
 function savePublicKey(role, publicKey) {
-    const keysFile = path.join(process.cwd(), 'agents', 'public-keys.json')
-
+    const publicKeysFile = getPublicKeysFile()
     let keys = {}
-    if (fs.existsSync(keysFile)) {
+    if (fs.existsSync(publicKeysFile)) {
         try {
-            keys = JSON.parse(fs.readFileSync(keysFile, 'utf8'))
+            keys = JSON.parse(fs.readFileSync(publicKeysFile, 'utf8'))
         } catch { keys = {} }
     }
 
     keys[role] = Buffer.from(publicKey).toString('hex')
-    fs.writeFileSync(keysFile, JSON.stringify(keys, null, 2))
+    fs.mkdirSync(path.dirname(publicKeysFile), { recursive: true })
+    fs.writeFileSync(publicKeysFile, JSON.stringify(keys, null, 2), { mode: 0o644 })
     console.log(`[PQC] Public key shared for [${role}]`)
 }
 
 function getPublicKey(role) {
-    const keysFile = path.join(process.cwd(), 'agents', 'public-keys.json')
+    const publicKeysFile = getPublicKeysFile()
+    if (!fs.existsSync(publicKeysFile)) return null
 
-    if (!fs.existsSync(keysFile)) return null
-
-    const keys = JSON.parse(fs.readFileSync(keysFile, 'utf8'))
+    const keys = JSON.parse(fs.readFileSync(publicKeysFile, 'utf8'))
     if (!keys[role]) return null
 
     return new Uint8Array(Buffer.from(keys[role], 'hex'))
