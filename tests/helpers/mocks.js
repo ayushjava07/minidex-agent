@@ -8,12 +8,14 @@ export function createMockLibp2pNode(opts = {}) {
     ? [...opts.connections]
     : []
 
+  let protocolHandler = null
+
   const mockNode = {
     peerId,
     role: opts.role || 'deploy',
     start: vi.fn().mockResolvedValue(undefined),
     stop: vi.fn().mockResolvedValue(undefined),
-    handle: vi.fn(),
+    handle(protocol, handler) { protocolHandler = handler },
     dial: vi.fn().mockImplementation(async (target) => {
       const conn = createMockConnection({ peerId: target })
       connections.push(conn)
@@ -26,6 +28,17 @@ export function createMockLibp2pNode(opts = {}) {
       merge: vi.fn().mockResolvedValue(undefined),
       delete: vi.fn(),
       get: vi.fn(),
+    },
+    _simulateMessage: async (topic, data, from) => {
+      if (!protocolHandler) return
+      const payload = JSON.stringify({
+        topic,
+        data: data || {},
+        from: from || 'test-agent',
+        ts: Date.now(),
+      })
+      const stream = createMockStream({ data: payload })
+      await protocolHandler(stream)
     },
   }
 
@@ -53,6 +66,22 @@ export function createMockConnection(opts = {}) {
 
 export function createMockStream(opts = {}) {
   const chunks = opts.chunks || []
+  const data = opts.data || ''
+
+  let sourceIterable
+  if (data) {
+    sourceIterable = (async function* () {
+      yield new TextEncoder().encode(data)
+    })()
+  } else {
+    sourceIterable = (async function* () {
+      for (const chunk of chunks) {
+        yield chunk
+      }
+    })()
+  }
+
+  const source = sourceIterable
 
   const stream = {
     id: opts.id || 'mock-stream-' + Date.now(),
@@ -68,12 +97,9 @@ export function createMockStream(opts = {}) {
     closeWrite: vi.fn(),
     abort: vi.fn(),
     sendData: vi.fn(),
-    source: (async function* () {
-      for (const chunk of chunks) {
-        yield chunk
-      }
-    })(),
+    source,
     sink: vi.fn(),
+    [Symbol.asyncIterator]: () => source[Symbol.asyncIterator](),
   }
 
   return stream

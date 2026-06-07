@@ -20,11 +20,6 @@ vi.mock('@libp2p/identify', () => ({
   identify: vi.fn(() => ({})),
 }))
 
-vi.mock('it-pipe', () => ({
-  default: vi.fn(([_source], sink) => sink),
-  pipe: vi.fn(),
-}))
-
 vi.mock('uint8arrays/to-string', () => ({
   default: (arr) => new TextDecoder().decode(arr),
   toString: (arr) => new TextDecoder().decode(arr),

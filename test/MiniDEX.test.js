@@ -90,7 +90,7 @@ describe("MiniDEX", function () {
       
       await expect(dex.connect(user).swap(await tokenA.getAddress(), amountIn))
         .to.emit(dex, "Swapped")
-        .withArgs(user.address, amountIn, expectedOut);
+        .withArgs(user.address, await tokenA.getAddress(), amountIn, expectedOut);
 
       expect(await tokenB.balanceOf(user.address)).to.equal(userInitialB + expectedOut);
       
@@ -110,7 +110,7 @@ describe("MiniDEX", function () {
       
       await expect(dex.connect(user).swap(await tokenB.getAddress(), amountIn))
         .to.emit(dex, "Swapped")
-        .withArgs(user.address, amountIn, expectedOut);
+        .withArgs(user.address, await tokenB.getAddress(), amountIn, expectedOut);
 
       expect(await tokenA.balanceOf(user.address)).to.equal(userInitialA + expectedOut);
       
