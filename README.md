@@ -142,6 +142,8 @@ npm run analytics
   `NETWORK_MAX_MESSAGE_BYTES`.
 - Authenticated inbound messages use per-sender and per-topic token buckets configured
   by the `NETWORK_RATE_LIMIT_*` variables.
+- Hierarchical global, sender, and sender/topic quotas protect against distributed floods,
+  with bounded state and inspectable limiter statistics.
 - Inbound security runs as an ordered middleware pipeline: authentication, replay
   protection, then rate limiting.
 - Known message topics enforce payload schemas on send and receive; custom schemas can
