@@ -170,4 +170,4 @@ async function main() {
     process.on('SIGTERM', shutdown)
 }
 
-main().catch(console.error)
+main().catch(err => { console.error(`[monitor] Fatal:`, err); process.exit(1) })
