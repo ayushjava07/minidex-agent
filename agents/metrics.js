@@ -246,7 +246,7 @@ export const networkMetrics = Object.freeze({
     messagesRateLimited: metrics.counter(
         'atos_network_messages_rate_limited_total',
         'Total authenticated network messages rejected by rate limiting.',
-        ['role', 'sender', 'topic']
+        ['role', 'scope', 'sender', 'topic']
     ),
     messageBytes: metrics.histogram(
         'atos_network_message_bytes',

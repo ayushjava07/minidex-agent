@@ -66,13 +66,15 @@ export function topicValidationMiddleware(registry) {
 }
 
 export function rateLimitMiddleware(limiter, options = {}) {
-    if (!limiter || typeof limiter.consume !== 'function') {
+    if (!limiter || (typeof limiter.consume !== 'function' && typeof limiter.consumeMessage !== 'function')) {
         throw new Error('Rate limit middleware requires a limiter')
     }
 
     return async (context, next) => {
         try {
-            context.rateLimit = limiter.consume(messageRateLimitKey(context.message))
+            context.rateLimit = typeof limiter.consumeMessage === 'function'
+                ? limiter.consumeMessage(context.message)
+                : limiter.consume(messageRateLimitKey(context.message))
         } catch (error) {
             if (error.code === 'RATE_LIMITED') options.onRateLimited?.(context, error)
             throw error

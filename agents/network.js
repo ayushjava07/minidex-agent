@@ -11,7 +11,7 @@ import { fromString }   from 'uint8arrays/from-string'
 import { multiaddr }    from '@multiformats/multiaddr'
 import { createLogger } from './logger.js'
 import { classifyMetricError, networkMetrics } from './metrics.js'
-import { createRateLimiter } from './rate-limit.js'
+import { createMessageRateLimiter } from './rate-limit.js'
 import { isTransientNetworkError, withRetry } from './retry.js'
 import { parseMessage } from './message-schema.js'
 import {
@@ -164,15 +164,16 @@ export async function createAgentNode(role) {
 
     node.role = role
     const replayProtector = createReplayProtector(authConfig)
-    const messageRateLimiter = createRateLimiter(rateLimitConfig)
+    const messageRateLimiter = createMessageRateLimiter(rateLimitConfig)
     inboundSecurityMiddleware.set(node, createInboundSecurityMiddleware({
         secret: authConfig.secret,
         topicSchemas,
         replayProtector,
         rateLimiter: messageRateLimiter,
-        onRateLimited: ({ message }) => networkMetrics.messagesRateLimited.inc({
+        onRateLimited: ({ message }, error) => networkMetrics.messagesRateLimited.inc({
             role,
             sender: message.from,
+            scope: error.scope,
             topic: message.topic
         })
     }))
