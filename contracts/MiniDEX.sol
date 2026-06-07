@@ -8,9 +8,12 @@ contract MiniDEX {
     IERC20 public tokenB;
     uint public reserveA;
     uint public reserveB;
+    mapping(address => uint) public liquidityA;
+    mapping(address => uint) public liquidityB;
 
     event LiquidityAdded(uint amountA, uint amountB);
-    event Swapped(address user, uint amountIn, uint amountOut);
+    event LiquidityRemoved(address indexed provider, uint amountA, uint amountB);
+    event Swapped(address indexed user, address indexed tokenIn, uint amountIn, uint amountOut);
 
     constructor(address _tokenA, address _tokenB) {
         tokenA = IERC20(_tokenA);
@@ -23,6 +26,8 @@ contract MiniDEX {
         tokenB.transferFrom(msg.sender, address(this), amountB);
         reserveA += amountA;
         reserveB += amountB;
+        liquidityA[msg.sender] += amountA;
+        liquidityB[msg.sender] += amountB;
         emit LiquidityAdded(amountA, amountB);
     }
 
@@ -49,17 +54,22 @@ contract MiniDEX {
             reserveA -= amountOut;
         }
         
-        emit Swapped(msg.sender, amountIn, amountOut);
+        emit Swapped(msg.sender, tokenIn, amountIn, amountOut);
     }
 
     // Remove Liquidity
     function removeLiquidity(uint amountA, uint amountB) external {
+        require(liquidityA[msg.sender] >= amountA, "Insufficient liquidity A");
+        require(liquidityB[msg.sender] >= amountB, "Insufficient liquidity B");
         require(reserveA >= amountA, "Not enough A");
         require(reserveB >= amountB, "Not enough B");
+        liquidityA[msg.sender] -= amountA;
+        liquidityB[msg.sender] -= amountB;
         reserveA -= amountA;
         reserveB -= amountB;
         tokenA.transfer(msg.sender, amountA);
         tokenB.transfer(msg.sender, amountB);
+        emit LiquidityRemoved(msg.sender, amountA, amountB);
     }
 
     // AMM formula x*y=k

@@ -2,6 +2,7 @@ import { createAgentNode, publishMessage, subscribeToTopic } from './network.js'
 import { logTask, logExecution, printDAG } from './ipld-logger.js'
 import { generateKeys, decryptMessage } from './pqc.js'
 import { loadReadOnlyAgentConfig } from '../config/env.js'
+import { startHealthServer } from './health.js'
 import { ethers } from 'ethers'
 import 'dotenv/config'
 
@@ -84,6 +85,7 @@ async function main() {
     console.log("=== Monitor Agent v2 ===")
 
     const node = await createAgentNode('monitor')
+    const health = await startHealthServer(node)
 
     generateKeys('monitor')
     console.log('[PQC] Monitor agent keys ready')
@@ -162,6 +164,7 @@ async function main() {
         })
 
         console.log('\nStopping Monitor Agent...')
+        await health.stop()
         await node.stop()
         process.exit(0)
     }

@@ -39,12 +39,46 @@ const SECRET_PATTERNS = [
     },
 ];
 
-function trackedFiles(rootDir) {
-    const output = execFileSync("git", ["ls-files", "-z"], {
-        cwd: rootDir,
-        encoding: "utf8",
-    });
-    return output.split("\0").filter(Boolean);
+const IGNORED_DIRECTORIES = new Set([
+    ".git",
+    "artifacts",
+    "build",
+    "cache",
+    "coverage",
+    "dist",
+    "logs",
+    "node_modules",
+    "typechain-types",
+]);
+
+function sourceFiles(rootDir, currentDir = rootDir) {
+    const files = [];
+
+    for (const entry of fs.readdirSync(currentDir, { withFileTypes: true })) {
+        if (entry.isDirectory() && IGNORED_DIRECTORIES.has(entry.name)) continue;
+
+        const absolutePath = path.join(currentDir, entry.name);
+        if (entry.isDirectory()) {
+            files.push(...sourceFiles(rootDir, absolutePath));
+        } else if (entry.isFile()) {
+            files.push(path.relative(rootDir, absolutePath));
+        }
+    }
+
+    return files;
+}
+
+function filesToScan(rootDir) {
+    try {
+        const output = execFileSync("git", ["ls-files", "-z"], {
+            cwd: rootDir,
+            encoding: "utf8",
+            stdio: ["ignore", "pipe", "ignore"],
+        });
+        return output.split("\0").filter(Boolean);
+    } catch {
+        return sourceFiles(rootDir);
+    }
 }
 
 function isBinary(content) {
@@ -54,7 +88,7 @@ function isBinary(content) {
 export function scanTrackedFiles(rootDir = process.cwd()) {
     const findings = [];
 
-    for (const relativePath of trackedFiles(rootDir)) {
+    for (const relativePath of filesToScan(rootDir)) {
         const normalizedPath = relativePath.split(path.sep).join("/");
 
         for (const rule of FORBIDDEN_TRACKED_PATHS) {
@@ -64,6 +98,8 @@ export function scanTrackedFiles(rootDir = process.cwd()) {
         }
 
         const absolutePath = path.join(rootDir, relativePath);
+        if (!fs.existsSync(absolutePath)) continue;
+
         const content = fs.readFileSync(absolutePath, "utf8");
         if (isBinary(content)) continue;
 

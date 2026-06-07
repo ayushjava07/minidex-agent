@@ -2,6 +2,7 @@ import { createAgentNode, publishMessage, subscribeToTopic } from './network.js'
 import { logTask, logExecution, printDAG } from './ipld-logger.js'
 import { generateKeys, encryptMessage, decryptMessage } from './pqc.js'
 import { loadReadOnlyAgentConfig } from '../config/env.js'
+import { startHealthServer } from './health.js'
 import { ethers } from 'ethers'
 import 'dotenv/config'
 
@@ -243,6 +244,7 @@ async function main() {
     console.log("=== Liquidity Manager Agent v1 ===")
 
     const node = await createAgentNode('liquidity')
+    const health = await startHealthServer(node)
 
     generateKeys('liquidity')
     console.log('[PQC] Liquidity agent keys ready')
@@ -318,6 +320,7 @@ async function main() {
         })
 
         console.log('\nStopping Liquidity Manager Agent...')
+        await health.stop()
         await node.stop()
         process.exit(0)
     }

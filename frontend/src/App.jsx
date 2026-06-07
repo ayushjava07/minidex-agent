@@ -1,19 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ethers } from "ethers";
 import toast, { Toaster } from "react-hot-toast";
-
-const ERC20_ABI = [
-  "function approve(address spender, uint256 amount) external returns (bool)",
-  "function decimals() external view returns (uint8)"
-];
-
-const MINIDEX_ABI = [
-  "function addLiquidity(uint256 amountA, uint256 amountB) external",
-  "function swapAforB(uint256 amountA) external",
-  "function swapBforA(uint256 amountB) external",
-  "function removeLiquidity(uint256 amountA, uint256 amountB) external",
-  "function getReserves() external view returns (uint256, uint256)"
-];
+import { ERC20_ABI, MINIDEX_ABI } from "./contracts";
 
 const SEPOLIA_CHAIN_ID = 11155111;
 
@@ -213,7 +201,7 @@ export default function App() {
 
     await runWithFeedback("Swap A→B", async () => {
       await approveToken(tokenAContract, amountIn);
-      const tx = await dexContract.swapAforB(amountIn);
+      const tx = await dexContract.swap(tokenAAddress, amountIn);
 
       const amountOut = computeAmountOut(amountIn, reserveA, reserveB);
       const newItem = {
@@ -235,7 +223,7 @@ export default function App() {
 
     await runWithFeedback("Swap B→A", async () => {
       await approveToken(tokenBContract, amountIn);
-      const tx = await dexContract.swapBforA(amountIn);
+      const tx = await dexContract.swap(tokenBAddress, amountIn);
 
       const amountOut = computeAmountOut(amountIn, reserveB, reserveA);
       const newItem = {

@@ -1,17 +1,32 @@
-// agents/network.js — FINAL WORKING VERSION
+// agents/network.js — v2.1.0
 
 import { createLibp2p } from 'libp2p'
 import { tcp }          from '@libp2p/tcp'
 import { noise }        from '@chainsafe/libp2p-noise'
 import { yamux }        from '@chainsafe/libp2p-yamux'
 import { identify }     from '@libp2p/identify'
-import { pipe }         from 'it-pipe'
+import { Uint8ArrayList } from 'uint8arraylist'
 import { toString }     from 'uint8arrays/to-string'
 import { fromString }   from 'uint8arrays/from-string'
 import { multiaddr }    from '@multiformats/multiaddr'
+import { createLogger } from './logger.js'
+import { loadRetryConfig, withRetry } from './retry.js'
+import {
+    loadMessageValidationConfig,
+    parseMessage
+} from './message-schema.js'
+import {
+    createAuthenticatedEnvelope,
+    createReplayProtector,
+    loadMessageAuthConfig,
+    verifyMessageAuthentication
+} from './message-auth.js'
 
 // ── Constants ──────────────────────────────────────────
 const PROTOCOL    = '/atos/1.0.0'
+const logger      = createLogger('network')
+const retryConfig = loadRetryConfig()
+const messageConfig = loadMessageValidationConfig()
 
 const AGENT_PORTS = {
     deploy   : 4001,
@@ -25,12 +40,11 @@ const AGENT_PORTS = {
 // Maps role → { peerId, port }
 const agentRegistry = new Map()
 
-// ── Topic handlers ─────────────────────────────────────
-const topicHandlers = new Map()
+// ── Topic handlers, isolated per node ──────────────────
+const topicHandlers = new WeakMap()
+const replayProtectors = new WeakMap()
 
 // ── Helpers ────────────────────────────────────────────
-const sleep = ms => new Promise(r => setTimeout(r, ms))
-
 function getUniquePeerCount(node) {
     const seen = new Set()
     return node.getConnections().filter(c => {
@@ -41,8 +55,29 @@ function getUniquePeerCount(node) {
     }).length
 }
 
+async function dialPeer(node, role, info) {
+    return withRetry(async () => {
+        await node.peerStore.merge(info.peerId, {
+            multiaddrs: [multiaddr(`/ip4/127.0.0.1/tcp/${info.port}`)]
+        })
+        return node.dial(info.peerId)
+    }, {
+        ...retryConfig,
+        onRetry: ({ attempt, delayMs, error }) => {
+            logger.warn('peer_connection_retry', {
+                role: node.role,
+                peerRole: role,
+                attempt,
+                delayMs,
+                error
+            })
+        }
+    })
+}
+
 // ─────────────────────────────────────────────────────────
 export async function createAgentNode(role) {
+    const authConfig = loadMessageAuthConfig()
     const port = AGENT_PORTS[role]
     if (!port) throw new Error(`Unknown role: ${role}`)
 
@@ -62,52 +97,67 @@ export async function createAgentNode(role) {
     await node.handle(PROTOCOL, async (stream) => {
         try {
             const chunks = []
-            for await (const chunk of stream.source) {
-                chunks.push(chunk)
+            let receivedBytes = 0
+            for await (const chunk of stream) {
+                const bytes = chunk instanceof Uint8ArrayList ? chunk.subarray() : chunk
+                receivedBytes += bytes.byteLength
+                if (receivedBytes > messageConfig.maxMessageBytes) {
+                    throw new Error(`Message exceeds maximum size of ${messageConfig.maxMessageBytes} bytes`)
+                }
+                chunks.push(bytes)
             }
             const raw     = chunks.map(c => toString(c)).join('')
-            const message = JSON.parse(raw)
+            const message = parseMessage(raw, messageConfig)
+            verifyMessageAuthentication(message, authConfig.secret)
+            replayProtectors.get(node).assertFresh(message)
 
-            console.log(`[Network][${role}] ← [${message.topic}] from [${message.from}]`)
+            logger.info('message_received', { role, topic: message.topic, from: message.from })
 
-            const handlers = topicHandlers.get(message.topic)
+            const handlers = topicHandlers.get(node)?.get(message.topic)
             if (handlers) {
-                for (const h of handlers) h(message.data)
+                for (const h of handlers) {
+                    try { await h(message.data) } catch (e) {
+                        logger.error('topic_handler_failed', { role, topic: message.topic, error: e })
+                    }
+                }
             }
-
-            await stream.close()
-
         } catch (err) {
-            console.error(`[Network][${role}] Handler error: ${err.message}`)
+            logger.error('message_handler_failed', { role, error: err })
+        } finally {
+            await stream.close().catch(error => {
+                logger.warn('message_stream_close_failed', { role, error })
+            })
         }
     })
 
     // ── Connection events ─────────────────────────────
     node.addEventListener('peer:connect', () => {
-        console.log(`[Network][${role}] ✅ Peers: ${getUniquePeerCount(node)}`)
+        logger.info('peer_connected', { role, peers: getUniquePeerCount(node) })
     })
 
     node.addEventListener('peer:disconnect', () => {
-        console.log(`[Network][${role}] ❌ Peers: ${getUniquePeerCount(node)}`)
+        const cnt = getUniquePeerCount(node)
+        if (cnt === 0) return
+        logger.warn('peer_disconnected', { role, peers: cnt })
     })
 
     await node.start()
 
     // ── Register self in shared registry ─────────────
-    // This is the KEY — store peerId so others can dial
     agentRegistry.set(role, {
         peerId : node.peerId,
         port   : port
     })
 
     node.role = role
+    replayProtectors.set(node, createReplayProtector(authConfig))
 
-    console.log(`\n${'═'.repeat(52)}`)
-    console.log(` Agent    : ${role}`)
-    console.log(` PeerID   : ${node.peerId.toString()}`)
-    console.log(` Address  : /ip4/127.0.0.1/tcp/${port}`)
-    console.log(` Protocol : ${PROTOCOL}`)
-    console.log(`${'═'.repeat(52)}\n`)
+    logger.info('agent_started', {
+        role,
+        peerId: node.peerId.toString(),
+        address: `/ip4/127.0.0.1/tcp/${port}`,
+        protocol: PROTOCOL
+    })
 
     return node
 }
@@ -119,7 +169,7 @@ export async function connectToAllPeers(node) {
     const myRole = node.role
     const myPort = AGENT_PORTS[myRole]
 
-    console.log(`[Network][${myRole}] Connecting to all peers...`)
+    logger.info('peer_connection_started', { role: myRole })
 
     let connected = 0
 
@@ -130,29 +180,26 @@ export async function connectToAllPeers(node) {
         try {
             // Step 1: Register address in peerStore.
             // libp2p needs PeerID and multiaddr before dialing by PeerId.
-            await node.peerStore.merge(info.peerId, {
-                multiaddrs: [multiaddr(`/ip4/127.0.0.1/tcp/${info.port}`)]
-            })
+            await dialPeer(node, role, info)
 
-            const conn = await node.dial(info.peerId)
-
-            // Step 3: Verify the connection by opening a protocol stream.
-            const testStream = await conn.newStream(PROTOCOL)
-            await testStream.close()
-
-            console.log(`[Network][${myRole}] ✅ [${role}] at port ${info.port}`)
+            logger.info('peer_connection_succeeded', { role: myRole, peerRole: role, port: info.port })
             connected++
         } catch (err) {
-            console.log(`[Network][${myRole}] ⚠️  [${role}]: ${err.message.slice(0, 60)}`)
+            logger.warn('peer_connection_failed', { role: myRole, peerRole: role, port: info.port, error: err })
         }
     }
 
-    console.log(`[Network][${myRole}] Connected: ${connected}/${Object.keys(AGENT_PORTS).length - 1}\n`)
+    logger.info('peer_connection_completed', {
+        role: myRole,
+        connected,
+        expected: Object.keys(AGENT_PORTS).length - 1
+    })
     return connected
 }
 
 // ─────────────────────────────────────────────────────────
 export async function publishMessage(node, topic, data) {
+    const authConfig = loadMessageAuthConfig()
     // Get existing connections
     let seen = new Set()
     let unique = node.getConnections().filter(c => {
@@ -172,58 +219,60 @@ export async function publishMessage(node, topic, data) {
         
         try {
             // Attempt to dial
-            const targetAddr = multiaddr(`/ip4/127.0.0.1/tcp/${info.port}`)
-            await node.peerStore.merge(info.peerId, { multiaddrs: [targetAddr] })
-            const conn = await node.dial(info.peerId)
-            
-            // Verify connection works
-            const testStream = await conn.newStream(PROTOCOL)
-            testStream.closeRead()
-            testStream.closeWrite()
-            
+            const conn = await dialPeer(node, role, info)
             unique.push(conn)
         } catch (err) {
-            // Connection failed, skip this peer
+            logger.warn('peer_reconnect_failed', { role: node.role, peerRole: role, error: err })
         }
     }
 
     if (unique.length === 0) {
-        console.log(`[Network][${node.role}] ⚠️  No peers for [${topic}]`)
+        logger.warn('broadcast_no_peers', { role: node.role, topic })
         return { sent: 0, total: 0 }
     }
 
-    const payload = JSON.stringify({
-        topic,
-        data,
-        from : node.role,
-        ts   : Date.now()
-    })
+    const payload = JSON.stringify(createAuthenticatedEnvelope(topic, data, node.role, {
+        config: authConfig
+    }))
 
     let sent = 0
 
     for (const conn of unique) {
         try {
             const stream = await conn.newStream(PROTOCOL)
-            await pipe([fromString(payload)], stream.sink)
+            stream.sendData(new Uint8ArrayList(fromString(payload)))
             await stream.close()
             sent++
-            console.log(`[Network][${node.role}] → [${topic}] → ${conn.remotePeer.toString().slice(0, 16)}...`)
+            logger.debug('message_sent', {
+                role: node.role,
+                topic,
+                peerId: conn.remotePeer.toString()
+            })
         } catch (err) {
-            console.log(`[Network][${node.role}] Send error: ${err.message.slice(0, 50)}`)
+            logger.warn('message_send_failed', {
+                role: node.role,
+                topic,
+                peerId: conn.remotePeer.toString(),
+                error: err
+            })
         }
     }
 
-    console.log(`[Network][${node.role}] Broadcast [${topic}]: ${sent}/${unique.length}`)
+    logger.info('broadcast_completed', { role: node.role, topic, sent, total: unique.length })
     return { sent, total: unique.length }
 }
 
 // ─────────────────────────────────────────────────────────
 export function subscribeToTopic(node, topic, handler) {
-    if (!topicHandlers.has(topic)) {
-        topicHandlers.set(topic, [])
+    if (!topicHandlers.has(node)) {
+        topicHandlers.set(node, new Map())
     }
-    topicHandlers.get(topic).push(handler)
-    console.log(`[Network][${node.role}] Subscribed: ${topic}`)
+    const nodeHandlers = topicHandlers.get(node)
+    if (!nodeHandlers.has(topic)) {
+        nodeHandlers.set(topic, [])
+    }
+    nodeHandlers.get(topic).push(handler)
+    logger.info('topic_subscribed', { role: node.role, topic })
 }
 
 // ─────────────────────────────────────────────────────────

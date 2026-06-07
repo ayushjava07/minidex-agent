@@ -1,9 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createMockLibp2pNode, createMockConnection, createMockStream } from '../helpers/mocks.js'
 import { AGENT_ROLES, AGENT_PORTS, PROTOCOL, makeMockPeerId } from '../helpers/fixtures.js'
-import { setupLibp2pMocks } from '../helpers/setup.js'
-
-setupLibp2pMocks()
+import '../setup/libp2p.js'
 
 const AGENT_NAMES = AGENT_ROLES
 

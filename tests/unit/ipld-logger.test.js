@@ -13,6 +13,7 @@ const virtualFs = vi.hoisted(() => {
       store[p] = typeof data === 'string' ? data : JSON.stringify(data, null, 2)
     },
     mkdirSync: () => {},
+    chmodSync: () => {},
   }
 })
 
@@ -21,11 +22,13 @@ vi.mock('fs', () => ({
   readFileSync: virtualFs.readFileSync,
   writeFileSync: virtualFs.writeFileSync,
   mkdirSync: virtualFs.mkdirSync,
+  chmodSync: virtualFs.chmodSync,
   default: {
     existsSync: virtualFs.existsSync,
     readFileSync: virtualFs.readFileSync,
     writeFileSync: virtualFs.writeFileSync,
     mkdirSync: virtualFs.mkdirSync,
+    chmodSync: virtualFs.chmodSync,
   },
 }))
 
