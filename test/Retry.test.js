@@ -1,5 +1,11 @@
 import { expect } from "chai";
-import { loadRetryConfig, withRetry } from "../agents/retry.js";
+import {
+    calculateRetryDelay,
+    createRetryManager,
+    isTransientNetworkError,
+    loadRetryConfig,
+    withRetry,
+} from "../agents/retry.js";
 
 describe("Retry and backoff", function () {
     it("retries transient failures with bounded exponential delays", async function () {
@@ -49,5 +55,64 @@ describe("Retry and backoff", function () {
 
         expect(() => loadRetryConfig({ NETWORK_RETRY_ATTEMPTS: "0" }))
             .to.throw("NETWORK_RETRY_ATTEMPTS must be a positive integer");
+    });
+
+    it("adds bounded jitter without exceeding configured variance", function () {
+        expect(calculateRetryDelay(2, {
+            initialDelayMs: 100,
+            maxDelayMs: 1000,
+            jitterRatio: 0.25,
+            random: () => 0,
+        })).to.equal(150);
+        expect(calculateRetryDelay(2, {
+            initialDelayMs: 100,
+            maxDelayMs: 1000,
+            jitterRatio: 0.25,
+            random: () => 1,
+        })).to.equal(250);
+    });
+
+    it("does not retry permanent failures", async function () {
+        let attempts = 0;
+        await expect(withRetry(async () => {
+            attempts++;
+            const error = new Error("authentication failed");
+            throw error;
+        }, {
+            maxAttempts: 5,
+            shouldRetry: isTransientNetworkError,
+        })).to.be.rejectedWith("authentication failed");
+        expect(attempts).to.equal(1);
+    });
+
+    it("supports cancellation during backoff", async function () {
+        const controller = new AbortController();
+        const retrying = withRetry(async () => {
+            throw new Error("temporary");
+        }, {
+            maxAttempts: 5,
+            initialDelayMs: 10_000,
+            signal: controller.signal,
+        });
+
+        controller.abort("shutdown");
+        await expect(retrying).to.be.rejectedWith("Retry aborted: shutdown");
+    });
+
+    it("tracks manager operation statistics", async function () {
+        const manager = createRetryManager({ maxAttempts: 2, initialDelayMs: 0 });
+        let attempts = 0;
+        expect(await manager.execute(async () => {
+            attempts++;
+            if (attempts === 1) throw new Error("temporary");
+            return "ok";
+        })).to.equal("ok");
+
+        expect(manager.stats()).to.deep.equal({
+            operations: 1,
+            retries: 1,
+            successes: 1,
+            failures: 0,
+        });
     });
 });

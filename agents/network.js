@@ -12,7 +12,7 @@ import { multiaddr }    from '@multiformats/multiaddr'
 import { createLogger } from './logger.js'
 import { classifyMetricError, networkMetrics } from './metrics.js'
 import { createRateLimiter, messageRateLimitKey } from './rate-limit.js'
-import { withRetry } from './retry.js'
+import { isTransientNetworkError, withRetry } from './retry.js'
 import { parseMessage } from './message-schema.js'
 import {
     createAuthenticatedEnvelope,
@@ -63,7 +63,10 @@ async function dialPeer(node, role, info) {
         return node.dial(info.peerId)
     }, {
         ...retryConfig,
+        jitterRatio: 0.2,
+        shouldRetry: isTransientNetworkError,
         onRetry: ({ attempt, delayMs, error }) => {
+            networkMetrics.connectionRetries.inc({ role: node.role, target_role: role })
             logger.warn('peer_connection_retry', {
                 role: node.role,
                 peerRole: role,

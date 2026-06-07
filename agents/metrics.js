@@ -223,6 +223,11 @@ export const networkMetrics = Object.freeze({
         'Current number of unique peers connected to an agent.',
         ['role']
     ),
+    connectionRetries: metrics.counter(
+        'atos_network_connection_retries_total',
+        'Total peer connection retry attempts.',
+        ['role', 'target_role']
+    ),
     messagesReceived: metrics.counter(
         'atos_network_messages_received_total',
         'Total authenticated network messages received.',
