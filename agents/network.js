@@ -20,6 +20,7 @@ import {
 } from './message-auth.js'
 import { createInboundSecurityMiddleware } from './message-middleware.js'
 import { topicSchemas } from './topic-schema.js'
+import { createMessageDispatcher, loadMessageDispatchConfig } from './message-dispatch.js'
 import { loadRuntimeConfig } from '../config/runtime.js'
 
 // ── Constants ──────────────────────────────────────────
@@ -42,6 +43,7 @@ const agentRegistry = new Map()
 const topicHandlers = new WeakMap()
 const runtimeConfigs = new WeakMap()
 const inboundSecurityMiddleware = new WeakMap()
+const messageDispatchers = new WeakMap()
 const stoppedNodes = new WeakSet()
 
 // ── Helpers ────────────────────────────────────────────
@@ -76,6 +78,7 @@ function attachRegistryCleanup(node, role) {
             topicHandlers.delete(node)
             runtimeConfigs.delete(node)
             inboundSecurityMiddleware.delete(node)
+            messageDispatchers.delete(node)
         }
     }
 }
@@ -146,11 +149,11 @@ export async function createAgentNode(role) {
 
             const handlers = topicHandlers.get(node)?.get(message.topic)
             if (handlers) {
-                for (const h of handlers) {
-                    try { await h(message.data) } catch (e) {
-                        logger.error('topic_handler_failed', { role, topic: message.topic, error: e })
-                    }
-                }
+                await messageDispatchers.get(node).dispatch(handlers, message.data, {
+                    role,
+                    topic: message.topic,
+                    from: message.from
+                })
             }
         } catch (err) {
             networkMetrics.messageFailures.inc({
@@ -205,6 +208,17 @@ export async function createAgentNode(role) {
         })
     }))
     runtimeConfigs.set(node, runtimeConfig)
+    messageDispatchers.set(node, createMessageDispatcher({
+        ...loadMessageDispatchConfig(),
+        onError: (error, context) => {
+            networkMetrics.handlerFailures.inc({
+                reason: error.code === 'HANDLER_TIMEOUT' ? 'timeout' : 'error',
+                role,
+                topic: context.topic
+            })
+            logger.error('topic_handler_failed', { ...context, error })
+        }
+    }))
     networkMetrics.connectedPeers.set({ role }, 0)
 
     logger.info('agent_started', {
