@@ -1,11 +1,11 @@
-import { buildModule }from "@nomicfoundation/hardhat-ignition/modules";
+import { buildModule } from "@nomicfoundation/hardhat-ignition/modules";
 
-export default buildModule("MiniDEXModule", (m)=> {
-    // Deploy tokens
-    const tokenA = m.contract("TokenA");
-    const tokenB = m.contract("TokenB");
+const DEFAULT_INITIAL_SUPPLY = 1_000_000n * 10n ** 18n;
 
-    // Deploy DEX with token addresses
+export default buildModule("MiniDEXModule", (m) => {
+    const initialSupply = m.getParameter("initialSupply", DEFAULT_INITIAL_SUPPLY);
+    const tokenA = m.contract("TokenA", [initialSupply]);
+    const tokenB = m.contract("TokenB", [initialSupply]);
     const miniDEX = m.contract("MiniDEX", [tokenA, tokenB]);
 
     return { tokenA, tokenB, miniDEX };
