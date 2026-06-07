@@ -3,6 +3,7 @@ import { getNetworkStatus } from './network.js'
 import { createLogger } from './logger.js'
 import { createHealthMonitor, loadHealthMonitorConfig } from './health-monitor.js'
 import { healthMetrics, metrics } from './metrics.js'
+import { createRuntimeMetricsCollector } from './runtime-metrics.js'
 
 const logger = createLogger('health')
 
@@ -30,6 +31,7 @@ export async function startHealthServer(node, options = {}) {
     const host = options.host ?? '127.0.0.1'
     const minPeers = options.minPeers ?? Number(process.env.HEALTH_MIN_PEERS || 1)
     const metricsRegistry = options.metrics ?? metrics
+    const runtimeCollector = options.runtimeMetricsCollector ?? createRuntimeMetricsCollector({ role })
     const monitorConfig = loadHealthMonitorConfig(options.env)
     const startedAt = Date.now()
 
@@ -100,14 +102,18 @@ export async function startHealthServer(node, options = {}) {
     })
 
     const address = server.address()
+    runtimeCollector.start()
     logger.info('health_server_started', { role, host, port: address.port, minPeers })
 
     return Object.freeze({
         address: () => server.address(),
         check: () => monitor.evaluate(),
         registerCheck: check => monitor.register(check),
-        stop: () => new Promise((resolve, reject) => {
-            server.close(error => error ? reject(error) : resolve())
-        })
+        stop: () => {
+            runtimeCollector.stop()
+            return new Promise((resolve, reject) => {
+                server.close(error => error ? reject(error) : resolve())
+            })
+        }
     })
 }

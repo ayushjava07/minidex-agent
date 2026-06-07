@@ -12,7 +12,7 @@
     "agents": "concurrently \"npm run deploy\" \"npm run monitor\" \"npm run report\" \"npm run liquidity\" \"npm run analytics\"",
     "test": "npm run test:contracts && npm run test:agents && npm run test:security && npm run test:unit && npm run test:frontend && npm run test:network",
     "test:contracts": "hardhat test test/MiniDEX.test.js test/Security.test.js test/TokenA.test.js test/TokenB.test.js test/FrontendABI.test.js test/IgnitionDeployment.test.js",
-    "test:agents": "hardhat test test/IPLD.test.js test/PQC.test.js test/NetworkDeliveryValidation.test.js test/AgentWorkflow.test.js test/StructuredLogging.test.js test/HealthMonitoring.test.js test/Metrics.test.js test/RateLimit.test.js test/Retry.test.js test/RuntimeConfig.test.js",
+    "test:agents": "hardhat test test/IPLD.test.js test/PQC.test.js test/NetworkDeliveryValidation.test.js test/AgentWorkflow.test.js test/StructuredLogging.test.js test/HealthMonitoring.test.js test/Metrics.test.js test/RuntimeMetrics.test.js test/RateLimit.test.js test/Retry.test.js test/RuntimeConfig.test.js",
     "test:security": "hardhat test test/SecretManagement.test.js test/SecurityValidation.test.js test/MessageAuthentication.test.js test/AuthMiddleware.test.js test/TopicSchema.test.js",
     "test:unit": "vitest run --config tests/vitest.config.js",
     "test:coverage": "vitest run --config tests/vitest.config.js --coverage",
