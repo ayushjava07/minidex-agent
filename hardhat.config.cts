@@ -1,5 +1,9 @@
-import { HardhatUserConfig, vars } from "hardhat/config";
+import "dotenv/config";
+import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
+import { loadOptionalSepoliaConfig } from "./config/env.js";
+
+const sepolia = loadOptionalSepoliaConfig();
 
 const config: HardhatUserConfig = {
   solidity: {
@@ -12,10 +16,7 @@ const config: HardhatUserConfig = {
     },
   },
   networks: {
-    sepolia: {
-      url: vars.has("INFURA_API_KEY") ? `https://sepolia.infura.io/v3/${vars.get("INFURA_API_KEY")}` : "",
-      accounts: vars.has("SEPOLIA_PRIVATE_KEY") ? [vars.get("SEPOLIA_PRIVATE_KEY")] : [],
-    },
+    sepolia,
   },
 };
 

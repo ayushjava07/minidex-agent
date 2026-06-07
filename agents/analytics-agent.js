@@ -1,13 +1,11 @@
 import { createAgentNode, publishMessage, subscribeToTopic } from './network.js'
 import { logTask, logExecution, printDAG } from './ipld-logger.js'
 import { generateKeys } from './pqc.js'
+import { loadReadOnlyAgentConfig } from '../config/env.js'
 import { ethers } from 'ethers'
 import 'dotenv/config'
 
-const RPC_URL     = process.env.RPC_URL
-const DEX_ADDRESS = process.env.DEX_ADDRESS
-const TOKEN_A     = process.env.TOKEN_A
-const TOKEN_B     = process.env.TOKEN_B
+const { rpcUrl: RPC_URL, dexAddress: DEX_ADDRESS } = loadReadOnlyAgentConfig()
 
 const DEX_ABI = [
     "function getReserves() view returns (uint, uint)",
