@@ -3,6 +3,7 @@ import { logTask, logExecution, getFullDAG, printDAG } from './ipld-logger.js'
 import { generateKeys, encryptMessage, decryptMessage } from './pqc.js'
 import { loadReadOnlyAgentConfig } from '../config/env.js'
 import { startHealthServer } from './health.js'
+import { createTaskScheduler } from './task-scheduler.js'
 import { ethers } from 'ethers'
 import 'dotenv/config'
 
@@ -71,6 +72,9 @@ async function monitorPool(node, coveredBy) {
 
 async function main() {
     console.log("=== Report Agent v2 ===")
+    const scheduler = createTaskScheduler({
+        onError: (error, task) => console.error(`[Report] Scheduled task ${task.name} failed:`, error)
+    })
 
     const node = await createAgentNode('report')
     const health = await startHealthServer(node)
@@ -136,7 +140,7 @@ async function main() {
     console.log('[Report] Active - monitoring started')
 
     // Fault detection har 15 second
-    setInterval(async () => {
+    scheduler.every('agent-failover-check', 15000, async () => {
         const now = Date.now()
 
         if (Object.keys(lastHeartbeat).length === 0) {
@@ -191,16 +195,16 @@ async function main() {
             printDAG(rootTaskCID)
         }
 
-    }, 15000)
+    })
 
     // Heartbeat bheje
-    setInterval(async () => {
+    scheduler.every('heartbeat', 10000, async () => {
         await publishMessage(node, 'heartbeat', {
             agent:     'report',
             status:    'active',
             timestamp: new Date().toISOString()
         })
-    }, 10000)
+    })
 
     const shutdown = async () => {
         if (backupMonitoring) clearInterval(backupMonitoring)
@@ -215,6 +219,7 @@ async function main() {
         })
 
         console.log('\nStopping Report Agent...')
+        await scheduler.stopAll()
         await health.stop()
         await node.stop()
         process.exit(0)

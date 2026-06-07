@@ -3,6 +3,7 @@ import { logTask, logExecution, printDAG } from './ipld-logger.js'
 import { generateKeys, decryptMessage } from './pqc.js'
 import { loadReadOnlyAgentConfig } from '../config/env.js'
 import { startHealthServer } from './health.js'
+import { createTaskScheduler } from './task-scheduler.js'
 import { ethers } from 'ethers'
 import 'dotenv/config'
 
@@ -83,6 +84,9 @@ async function monitorPool(node) {
 
 async function main() {
     console.log("=== Monitor Agent v2 ===")
+    const scheduler = createTaskScheduler({
+        onError: (error, task) => console.error(`[Monitor] Scheduled task ${task.name} failed:`, error)
+    })
 
     const node = await createAgentNode('monitor')
     const health = await startHealthServer(node)
@@ -143,15 +147,15 @@ async function main() {
 
     await monitorPool(node)
 
-    setInterval(() => monitorPool(node), 10000)
+    scheduler.every('monitor-pool', 10000, () => monitorPool(node))
 
-    setInterval(async () => {
+    scheduler.every('heartbeat', 10000, async () => {
         await publishMessage(node, 'heartbeat', {
             agent:     'monitor',
             status:    'active',
             timestamp: new Date().toISOString()
         })
-    }, 10000)
+    })
 
     const shutdown = async () => {
         await logTask({
@@ -164,6 +168,7 @@ async function main() {
         })
 
         console.log('\nStopping Monitor Agent...')
+        await scheduler.stopAll()
         await health.stop()
         await node.stop()
         process.exit(0)
