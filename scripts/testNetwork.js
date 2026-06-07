@@ -29,8 +29,8 @@ async function main() {
     console.log(`📋 Registry: ${[...nodes.map(n => n.role)].join(', ')}\n`)
 
     // ── Phase 2: Wait for TCP servers to be ready ─────
-    console.log('⏳ Waiting 10s for all TCP servers to be ready...\n')
-    await sleep(10000)
+    console.log('⏳ Waiting 1s for all TCP servers to be ready...\n')
+    await sleep(1000)
 
     // ── Phase 3: Connect everyone to everyone ─────────
     console.log('🔗 Connecting all agents...\n')
@@ -113,11 +113,13 @@ async function main() {
 
     // ── Phase 7: Final Status ──────────────────────────
     console.log('\n📊 Final Network Status:')
+    let fullMesh = true
     for (const node of nodes) {
         const s   = getNetworkStatus(node)
         const bar = '█'.repeat(s.peers) + '░'.repeat(4 - s.peers)
         const ok  = s.peers === 4 ? '✅' : '❌'
         console.log(`  ${s.role.padEnd(10)} [${bar}] ${s.peers}/4 ${ok}`)
+        fullMesh = fullMesh && s.peers === 4
     }
 
     // ── Shutdown ───────────────────────────────────────
@@ -126,6 +128,10 @@ async function main() {
         await node.stop()
     }
     console.log('✅ All agents stopped. Test complete.\n')
+
+    if (!fullMesh) {
+        throw new Error('Network integration failed: not all agents reached 4/4 peers')
+    }
 }
 
 main().catch(err => {
