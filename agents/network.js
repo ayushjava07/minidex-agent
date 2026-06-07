@@ -11,25 +11,19 @@ import { fromString }   from 'uint8arrays/from-string'
 import { multiaddr }    from '@multiformats/multiaddr'
 import { createLogger } from './logger.js'
 import { classifyMetricError, networkMetrics } from './metrics.js'
-import { createRateLimiter, loadRateLimitConfig, messageRateLimitKey } from './rate-limit.js'
-import { loadRetryConfig, withRetry } from './retry.js'
-import {
-    loadMessageValidationConfig,
-    parseMessage
-} from './message-schema.js'
+import { createRateLimiter, messageRateLimitKey } from './rate-limit.js'
+import { withRetry } from './retry.js'
+import { parseMessage } from './message-schema.js'
 import {
     createAuthenticatedEnvelope,
     createReplayProtector,
-    loadMessageAuthConfig,
     verifyMessageAuthentication
 } from './message-auth.js'
+import { loadRuntimeConfig } from '../config/runtime.js'
 
 // ── Constants ──────────────────────────────────────────
 const PROTOCOL    = '/atos/1.0.0'
 const logger      = createLogger('network')
-const retryConfig = loadRetryConfig()
-const messageConfig = loadMessageValidationConfig()
-const rateLimitConfig = loadRateLimitConfig()
 
 const AGENT_PORTS = {
     deploy   : 4001,
@@ -47,6 +41,7 @@ const agentRegistry = new Map()
 const topicHandlers = new WeakMap()
 const replayProtectors = new WeakMap()
 const messageRateLimiters = new WeakMap()
+const runtimeConfigs = new WeakMap()
 
 // ── Helpers ────────────────────────────────────────────
 function getUniquePeerCount(node) {
@@ -60,6 +55,7 @@ function getUniquePeerCount(node) {
 }
 
 async function dialPeer(node, role, info) {
+    const retryConfig = runtimeConfigs.get(node)?.network.retry ?? loadRuntimeConfig().network.retry
     return withRetry(async () => {
         await node.peerStore.merge(info.peerId, {
             multiaddrs: [multiaddr(`/ip4/127.0.0.1/tcp/${info.port}`)]
@@ -81,7 +77,8 @@ async function dialPeer(node, role, info) {
 
 // ─────────────────────────────────────────────────────────
 export async function createAgentNode(role) {
-    const authConfig = loadMessageAuthConfig()
+    const runtimeConfig = loadRuntimeConfig()
+    const { authentication: authConfig, validation: messageConfig, rateLimit: rateLimitConfig } = runtimeConfig.network
     const port = AGENT_PORTS[role]
     if (!port) throw new Error(`Unknown role: ${role}`)
 
@@ -178,6 +175,7 @@ export async function createAgentNode(role) {
     node.role = role
     replayProtectors.set(node, createReplayProtector(authConfig))
     messageRateLimiters.set(node, createRateLimiter(rateLimitConfig))
+    runtimeConfigs.set(node, runtimeConfig)
     networkMetrics.connectedPeers.set({ role }, 0)
 
     logger.info('agent_started', {
@@ -227,7 +225,7 @@ export async function connectToAllPeers(node) {
 
 // ─────────────────────────────────────────────────────────
 export async function publishMessage(node, topic, data) {
-    const authConfig = loadMessageAuthConfig()
+    const authConfig = (runtimeConfigs.get(node) ?? loadRuntimeConfig()).network.authentication
     // Get existing connections
     let seen = new Set()
     let unique = node.getConnections().filter(c => {
