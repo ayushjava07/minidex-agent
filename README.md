@@ -135,6 +135,8 @@ npm run analytics
   without removing the agent from service.
 - Peer dials use bounded backoff configured by the `NETWORK_RETRY_*` variables.
 - Peer retry delays include jitter, skip permanent failures, and support cancellation.
+- Retry managers can be guarded by circuit breakers with closed, open, and half-open
+  recovery states.
 - Inbound messages are rejected when they violate the envelope schema or exceed
   `NETWORK_MAX_MESSAGE_BYTES`.
 - Authenticated inbound messages use per-sender and per-topic token buckets configured
