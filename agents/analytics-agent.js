@@ -3,6 +3,7 @@ import { logTask, logExecution, printDAG } from './ipld-logger.js'
 import { generateKeys } from './pqc.js'
 import { loadReadOnlyAgentConfig } from '../config/env.js'
 import { summarizeSwapEvents } from './workflows/analytics.js'
+import { startHealthServer } from './health.js'
 import { ethers } from 'ethers'
 import 'dotenv/config'
 
@@ -284,6 +285,7 @@ async function main() {
     console.log("=== Analytics Agent v1 ===")
 
     const node = await createAgentNode('analytics')
+    const health = await startHealthServer(node)
 
     generateKeys('analytics')
     console.log('[PQC] Analytics agent keys ready')
@@ -371,6 +373,7 @@ async function main() {
         })
 
         console.log('\nStopping Analytics Agent...')
+        await health.stop()
         await node.stop()
         process.exit(0)
     }
