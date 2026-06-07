@@ -171,11 +171,11 @@ async function main() {
                     })
 
                     // Turant check kare
-                    await monitorPool(node, 'report-covering-monitor')
+                    await monitorPool(node, 'report-covering-monitor').catch(err => console.error('[Report] Backup monitor error:', err.message))
 
                     // Har 10 second
                     backupMonitoring = setInterval(() => {
-                        monitorPool(node, 'report-covering-monitor')
+                        monitorPool(node, 'report-covering-monitor').catch(err => console.error('[Report] Backup monitor error:', err.message))
                     }, 10000)
                 }
 
