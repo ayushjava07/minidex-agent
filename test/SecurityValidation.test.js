@@ -28,6 +28,8 @@ describe("Network message security validation", function () {
             .to.throw("Message envelope contains unexpected fields: elevated");
         expect(() => validateMessageEnvelope({ ...validMessage, data: "not-an-object" }))
             .to.throw("Message data must be an object");
+        expect(() => validateMessageEnvelope({ ...validMessage, id: "invalid" }))
+            .to.throw("Message ID has an invalid format");
     });
 
     it("rejects oversized, deeply nested, and unsafe data", function () {

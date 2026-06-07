@@ -1,5 +1,6 @@
 import { vi } from 'vitest'
 import { makeMockPeerId } from './fixtures.js'
+import { createAuthenticatedEnvelope, loadMessageAuthConfig } from '../../agents/message-auth.js'
 
 export function createMockLibp2pNode(opts = {}) {
   const peerId = opts.peerId || makeMockPeerId(opts.role || 'deploy')
@@ -31,12 +32,12 @@ export function createMockLibp2pNode(opts = {}) {
     },
     _simulateMessage: async (topic, data, from) => {
       if (!protocolHandler) return
-      const payload = JSON.stringify({
+      const payload = JSON.stringify(createAuthenticatedEnvelope(
         topic,
-        data: data || {},
-        from: from || 'test-agent',
-        ts: Date.now(),
-      })
+        data || {},
+        from || 'test-agent',
+        { config: loadMessageAuthConfig() }
+      ))
       const stream = createMockStream({ data: payload })
       await protocolHandler(stream)
     },

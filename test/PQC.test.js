@@ -46,9 +46,9 @@ describe("PQC (Post-Quantum Cryptography)", function () {
         expect(decrypted).to.equal(message);
     });
 
-    it("Should fail to encrypt if target public key is missing", function () {
-        const encrypted = encryptMessage("non-existent-role", "some message");
-        expect(encrypted).to.be.null;
+    it("Should fail closed if target public key is missing", function () {
+        expect(() => encryptMessage("non-existent-role", "some message"))
+            .to.throw("[PQC] Public key not found for [non-existent-role]");
     });
 
     it("Should fail to decrypt if secret key is missing", function () {

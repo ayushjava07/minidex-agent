@@ -11,6 +11,7 @@ import { validateNetworkRun } from './networkValidation.js'
 
 const ROLES = ['deploy', 'monitor', 'report', 'liquidity', 'analytics']
 const sleep = ms => new Promise(r => setTimeout(r, ms))
+process.env.NETWORK_AUTH_SECRET ||= 'test-only-network-auth-secret-with-32-characters'
 
 async function main() {
     console.log('🚀 Starting all 5 ATOS agents...\n')

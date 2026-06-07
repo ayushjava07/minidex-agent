@@ -58,7 +58,7 @@ export function validateMessageEnvelope(message) {
     }
 
     const keys = Object.keys(message)
-    const allowedKeys = new Set(['topic', 'data', 'from', 'ts'])
+    const allowedKeys = new Set(['topic', 'data', 'from', 'ts', 'id', 'auth'])
     const unexpected = keys.filter(key => !allowedKeys.has(key))
     if (unexpected.length > 0) {
         throw new Error(`Message envelope contains unexpected fields: ${unexpected.join(', ')}`)
@@ -71,6 +71,9 @@ export function validateMessageEnvelope(message) {
     }
     if (!Number.isSafeInteger(message.ts) || message.ts < 0) {
         throw new Error('Message timestamp must be a non-negative safe integer')
+    }
+    if (message.id !== undefined && (typeof message.id !== 'string' || !/^[0-9a-f-]{36}$/.test(message.id))) {
+        throw new Error('Message ID has an invalid format')
     }
     if (!message.data || typeof message.data !== 'object' || Array.isArray(message.data)) {
         throw new Error('Message data must be an object')

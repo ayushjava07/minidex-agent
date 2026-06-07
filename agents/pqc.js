@@ -146,10 +146,7 @@ export function encryptMessage(targetRole, message) {
     const publicKey = getPublicKey(targetRole)
     
     if (!publicKey) {
-        // Encrypt karne ki koshish mat karo
-        // Sirf warn karo
-        console.log(`[PQC] Warning: No public key for [${targetRole}] - skipping encryption`)
-        return null
+        throw new Error(`[PQC] Public key not found for [${targetRole}]`)
     }
 
     try {
@@ -175,8 +172,7 @@ export function encryptMessage(targetRole, message) {
 
     return result
     } catch(err) {
-        console.log(`[PQC] Encryption failed: ${err.message}`)
-        return null
+        throw new Error(`[PQC] Encryption failed for [${targetRole}]: ${err.message}`)
     }
 }
 
