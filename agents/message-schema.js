@@ -52,6 +52,13 @@ export function createMessageEnvelope(topic, data, from, timestamp = Date.now())
     return envelope
 }
 
+export function validateMessageTopic(topic) {
+    if (!TOPIC_PATTERN.test(topic || '')) {
+        throw new Error('Message topic must be a lowercase alphanumeric identifier')
+    }
+    return topic
+}
+
 export function validateMessageEnvelope(message) {
     if (!message || typeof message !== 'object' || Array.isArray(message)) {
         throw new Error('Message envelope must be an object')
@@ -63,9 +70,7 @@ export function validateMessageEnvelope(message) {
     if (unexpected.length > 0) {
         throw new Error(`Message envelope contains unexpected fields: ${unexpected.join(', ')}`)
     }
-    if (!TOPIC_PATTERN.test(message.topic || '')) {
-        throw new Error('Message topic must be a lowercase alphanumeric identifier')
-    }
+    validateMessageTopic(message.topic)
     if (!SENDER_PATTERN.test(message.from || '')) {
         throw new Error('Message sender has an invalid format')
     }

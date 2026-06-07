@@ -13,7 +13,7 @@ import { createLogger } from './logger.js'
 import { classifyMetricError, networkMetrics } from './metrics.js'
 import { createMessageRateLimiter } from './rate-limit.js'
 import { isTransientNetworkError, withRetry } from './retry.js'
-import { parseMessage } from './message-schema.js'
+import { parseMessage, validateMessageTopic } from './message-schema.js'
 import {
     createAuthenticatedEnvelope,
     createReplayProtector,
@@ -73,6 +73,9 @@ function attachRegistryCleanup(node, role) {
                 networkMetrics.connectedPeers.set({ role }, 0)
                 logger.info('agent_unregistered', { role, peerId: node.peerId.toString() })
             }
+            topicHandlers.delete(node)
+            runtimeConfigs.delete(node)
+            inboundSecurityMiddleware.delete(node)
         }
     }
 }
@@ -325,15 +328,30 @@ export async function publishMessage(node, topic, data) {
 
 // ─────────────────────────────────────────────────────────
 export function subscribeToTopic(node, topic, handler) {
+    if (typeof handler !== 'function') throw new Error('Topic handler must be a function')
+    validateMessageTopic(topic)
     if (!topicHandlers.has(node)) {
         topicHandlers.set(node, new Map())
     }
     const nodeHandlers = topicHandlers.get(node)
     if (!nodeHandlers.has(topic)) {
-        nodeHandlers.set(topic, [])
+        nodeHandlers.set(topic, new Set())
     }
-    nodeHandlers.get(topic).push(handler)
+    const handlers = nodeHandlers.get(topic)
+    if (handlers.has(handler)) throw new Error(`Handler already subscribed to topic: ${topic}`)
+    handlers.add(handler)
     logger.info('topic_subscribed', { role: node.role, topic })
+
+    let active = true
+    return () => {
+        if (!active) return false
+        active = false
+        const removed = handlers.delete(handler)
+        if (handlers.size === 0) nodeHandlers.delete(topic)
+        if (nodeHandlers.size === 0) topicHandlers.delete(node)
+        if (removed) logger.info('topic_unsubscribed', { role: node.role, topic })
+        return removed
+    }
 }
 
 // ─────────────────────────────────────────────────────────
