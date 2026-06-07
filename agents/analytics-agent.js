@@ -11,8 +11,8 @@ const TOKEN_B     = process.env.TOKEN_B
 
 const DEX_ABI = [
     "function getReserves() view returns (uint, uint)",
-    "event Swap(address indexed user, uint amountIn, uint amountOut, bool AtoB)",
-    "event LiquidityAdded(address indexed provider, uint amountA, uint amountB)"
+    "event Swapped(address user, uint amountIn, uint amountOut)",
+    "event LiquidityAdded(uint amountA, uint amountB)"
 ]
 
 let rootTaskCID    = null
