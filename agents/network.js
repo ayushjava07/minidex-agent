@@ -178,8 +178,8 @@ export async function publishMessage(node, topic, data) {
             
             // Verify connection works
             const testStream = await conn.newStream(PROTOCOL)
-            testStream.closeRead()
-            testStream.closeWrite()
+            await testStream.closeRead()
+            await testStream.closeWrite()
             
             unique.push(conn)
         } catch (err) {
