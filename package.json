@@ -11,7 +11,7 @@
     "analytics": "node agents/analytics-agent.js",
     "agents": "concurrently \"npm run deploy\" \"npm run monitor\" \"npm run report\" \"npm run liquidity\" \"npm run analytics\"",
     "test": "npm run test:contracts && npm run test:agents && npm run test:security && npm run test:network",
-    "test:contracts": "hardhat test test/MiniDEX.test.js test/Security.test.js test/TokenA.test.js test/TokenB.test.js",
+    "test:contracts": "hardhat test test/MiniDEX.test.js test/Security.test.js test/TokenA.test.js test/TokenB.test.js test/FrontendABI.test.js",
     "test:agents": "hardhat test test/IPLD.test.js test/PQC.test.js",
     "test:security": "hardhat test test/SecretManagement.test.js",
     "check:secrets": "node scripts/checkSecrets.js",

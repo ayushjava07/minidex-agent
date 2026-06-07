@@ -78,11 +78,10 @@ Data Layer (IPLD + CID DAG)
 
 ### ⚙️ Functions
 
-- `addLiquidity()`  
-- `swapAforB()`  
-- `swapBforA()`  
-- `removeLiquidity()`  
-- `getReserves()`  
+- `addLiquidity(amountA, amountB)`
+- `swap(tokenIn, amountIn)`
+- `removeLiquidity(amountA, amountB)`
+- `getReserves()`
 
 ---
 
