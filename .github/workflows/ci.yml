@@ -38,6 +38,9 @@ jobs:
       - name: Run agent unit and integration tests
         run: npm run test:unit
 
+      - name: Run frontend integration tests
+        run: npm run test:frontend
+
       - name: Run secret management tests
         run: npm run test:security
 

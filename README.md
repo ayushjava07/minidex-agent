@@ -226,6 +226,7 @@ npm run check:secrets
 ```
 
 `npm run test:unit` runs the isolated agent and mocked mesh workflow suite.
+`npm run test:frontend` runs the browser-like dashboard integration suite.
 `npm run test:network` starts the five-agent local mesh and fails unless every
 agent reaches all four peers and every test broadcast reaches all four recipients.
 
