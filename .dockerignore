@@ -1,5 +1,4 @@
-# Version-control and editor metadata
-.git
+# Editor metadata
 .github
 .gitignore
 .idea
