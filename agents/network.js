@@ -10,10 +10,12 @@ import { toString }     from 'uint8arrays/to-string'
 import { fromString }   from 'uint8arrays/from-string'
 import { multiaddr }    from '@multiformats/multiaddr'
 import { createLogger } from './logger.js'
+import { loadRetryConfig, withRetry } from './retry.js'
 
 // ── Constants ──────────────────────────────────────────
 const PROTOCOL    = '/atos/1.0.0'
 const logger      = createLogger('network')
+const retryConfig = loadRetryConfig()
 
 const AGENT_PORTS = {
     deploy   : 4001,
@@ -39,6 +41,26 @@ function getUniquePeerCount(node) {
         seen.add(id)
         return true
     }).length
+}
+
+async function dialPeer(node, role, info) {
+    return withRetry(async () => {
+        await node.peerStore.merge(info.peerId, {
+            multiaddrs: [multiaddr(`/ip4/127.0.0.1/tcp/${info.port}`)]
+        })
+        return node.dial(info.peerId)
+    }, {
+        ...retryConfig,
+        onRetry: ({ attempt, delayMs, error }) => {
+            logger.warn('peer_connection_retry', {
+                role: node.role,
+                peerRole: role,
+                attempt,
+                delayMs,
+                error
+            })
+        }
+    })
 }
 
 // ─────────────────────────────────────────────────────────
@@ -135,11 +157,7 @@ export async function connectToAllPeers(node) {
         try {
             // Step 1: Register address in peerStore.
             // libp2p needs PeerID and multiaddr before dialing by PeerId.
-            await node.peerStore.merge(info.peerId, {
-                multiaddrs: [multiaddr(`/ip4/127.0.0.1/tcp/${info.port}`)]
-            })
-
-            await node.dial(info.peerId)
+            await dialPeer(node, role, info)
 
             logger.info('peer_connection_succeeded', { role: myRole, peerRole: role, port: info.port })
             connected++
@@ -177,9 +195,7 @@ export async function publishMessage(node, topic, data) {
         
         try {
             // Attempt to dial
-            const targetAddr = multiaddr(`/ip4/127.0.0.1/tcp/${info.port}`)
-            await node.peerStore.merge(info.peerId, { multiaddrs: [targetAddr] })
-            const conn = await node.dial(info.peerId)
+            const conn = await dialPeer(node, role, info)
             unique.push(conn)
         } catch (err) {
             logger.warn('peer_reconnect_failed', { role: node.role, peerRole: role, error: err })
