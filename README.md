@@ -193,12 +193,18 @@ npm install
 
 ### 🔑 Environment
 
+Copy the safe template and provide values locally:
+
 ```bash
-TOKEN_A=...
-TOKEN_B=...
-DEX_ADDRESS=...
-RPC_URL=...
+cp .env.example .env
 ```
+
+`SEPOLIA_PRIVATE_KEY` is required only for transactions and deployments. Use a
+dedicated, minimally funded testnet account. Never commit `.env`, private keys,
+seed phrases, or generated files under `agents/keys/`.
+
+See [Secrets Management](docs/secrets.md) for configuration validation,
+credential rotation, production secret storage, and Git history cleanup.
 
 ---
 
@@ -213,7 +219,8 @@ npx hardhat ignition deploy ./ignition/modules/Deploy.js --network sepolia
 ### 🧪 Tests
 
 ```bash
-npx hardhat test
+npm test
+npm run check:secrets
 ```
 
 ✔ 56 tests passing  
