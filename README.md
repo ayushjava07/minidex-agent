@@ -1,4 +1,4 @@
-# MiniDEX Agent — ATOS (Autonomous Token Orchestration System)
+# MiniDEX Agent - ATOS (Autonomous Token Orchestration System)
 
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](https://choosealicense.com/licenses/mit/)
 [![Network](https://img.shields.io/badge/Network-Sepolia-blue.svg)]()
@@ -45,8 +45,8 @@ Functions: `addLiquidity`, `swap`, `removeLiquidity`, `getReserves`.
 
 ## Multi-Agent System
 
-- Agents run independently with libp2p Peer IDs
-- Auto-discovery via mDNS, protocol `/atos/1.0.0`
+- Five agent roles communicate over a local libp2p TCP mesh
+- Peer connections use the authenticated `/atos/1.0.0` protocol
 - Heartbeat every 10s, failover after 30s
 - State stored as IPLD DAG (CID)
 
@@ -58,36 +58,74 @@ Functions: `addLiquidity`, `swap`, `removeLiquidity`, `getReserves`.
 - **Liquidity Agent** — ratio monitoring, imbalance detection, rebalance suggestions
 - **Analytics Agent** — swap history, TVL calculation, report generation
 
-## Setup
+## Quick Start
 
 ### Prerequisites
 
-- Node.js v18+
-- MetaMask
-- Sepolia ETH
+- Node.js 22
+- npm 10+
+- Git
+- MetaMask and Sepolia ETH only for testnet interaction
 
 ### Installation
 
 ```bash
 git clone https://github.com/ayushjava07/minidex-agent
 cd minidex-agent
-npm install
+npm ci
+npm ci --prefix frontend
 ```
 
-### Environment
+Use `npm ci` to install the exact dependency versions in the lockfiles.
+
+### Configuration
 
 ```bash
 cp .env.example .env
 ```
 
-`SEPOLIA_PRIVATE_KEY` is required only for transactions and deployments. Use a dedicated, minimally funded testnet account. Never commit `.env`, private keys, seed phrases, or generated files under `agents/keys/`.
+Replace the placeholder values required for the command you intend to run.
+`SEPOLIA_PRIVATE_KEY` is required only for transactions and Sepolia deployments.
+Use a dedicated, minimally funded testnet account. Never commit `.env`, private
+keys, seed phrases, or generated files under `agents/keys/`.
 
 See [Secrets Management](docs/secrets.md) for configuration validation, credential rotation, production secret storage, and Git history cleanup.
 
 See the [Threat Model](docs/threat-model.md) and
 [Deployment Runbook](docs/deployment-runbook.md) before production rollout.
 
-### Deploy
+### Verify The Repository
+
+Run the complete submission validation:
+
+```bash
+npm run verify
+```
+
+This runs the committed-secret scan, contract/agent/security/unit/frontend/live
+network tests, and the production frontend build. The live network test binds
+local TCP ports `4001` through `4005`.
+
+Run individual checks when developing:
+
+```bash
+npm run check:secrets
+npm run test:contracts
+npm run test:agents
+npm run test:security
+npm run test:unit
+npm run test:frontend
+npm run test:network
+npm run build
+```
+
+### Local Contract Deployment
+
+```bash
+npx hardhat ignition deploy ./ignition/modules/Deploy.js --network hardhat
+```
+
+### Sepolia Deployment
 
 ```bash
 npx hardhat ignition deploy ./ignition/modules/Deploy.js --network sepolia
@@ -96,17 +134,6 @@ npx hardhat ignition deploy ./ignition/modules/Deploy.js --network sepolia
 The deployment mints `1,000,000` TokenA and TokenB tokens to the deployer by default.
 Override `MiniDEXModule.initialSupply` with an Ignition parameters file when a
 different base-unit supply is required.
-
-### Tests
-
-```bash
-npm test
-npm run check:secrets
-```
-
-- `npm run test:unit` — isolated agent and mocked mesh workflow suite
-- `npm run test:frontend` — browser-like dashboard integration suite
-- `npm run test:network` — five-agent local mesh; fails unless every agent reaches all four peers and every test broadcast reaches all four recipients
 
 ### Add Liquidity
 
@@ -122,6 +149,54 @@ npm run monitor
 npm run report
 npm run liquidity
 npm run analytics
+```
+
+## Docker
+
+The default Docker build runs the secret scan, complete test suite, frontend
+production build, and local Hardhat Ignition deployment before producing the
+runtime image. The base image is pinned by digest and the final image contains
+only production dependencies, agent runtime source, schemas, and built frontend
+assets.
+
+### Build
+
+```bash
+docker build --pull --tag minidex-agent:project-silver .
+```
+
+To build only through the validation stage:
+
+```bash
+docker build --pull --target validation --tag minidex-agent:validation .
+```
+
+### Run
+
+Create a local environment file from `.env.example`, replace every required
+placeholder, then start all five agents:
+
+```bash
+docker run --rm --init \
+  --name minidex-agent \
+  --env-file .env \
+  --publish 4001-4005:4001-4005 \
+  --publish 4101-4105:4101-4105 \
+  minidex-agent:project-silver
+```
+
+Generated keys and agent logs are written under `/app/agents`. For persistent
+runtime state, mount the specific generated paths required by your deployment.
+Do not bake secrets into the image or pass them as Docker build arguments.
+
+Override the default command to run one operation:
+
+```bash
+docker run --rm --init --env-file .env \
+  minidex-agent:project-silver npm run monitor
+
+docker run --rm --init --env-file .env \
+  minidex-agent:project-silver node scripts/addLiquidity.js
 ```
 
 ## Production Operations
@@ -160,12 +235,17 @@ Features: MetaMask connect, token swap, liquidity management, pool stats, agent 
 ## Project Structure
 
 ```
-contracts/
-agents/
-schemas/
-scripts/
-frontend/
-test/
-.env
-README.md
+agents/       Multi-agent runtime, networking, security, and workflows
+config/       Environment loading and validation
+contracts/    Solidity contracts
+docs/         Security and deployment documentation
+frontend/     React dashboard
+ignition/     Hardhat Ignition deployment module
+schemas/      IPLD schemas
+scripts/      Operational and validation scripts
+test/         Hardhat contract and agent tests
+tests/        Vitest unit and integration tests
 ```
+
+Generated build output, runtime logs, peer registries, cryptographic keys, and
+local environment files are intentionally excluded from version control.
