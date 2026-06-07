@@ -21,6 +21,14 @@
 .env.*
 !.env.example
 
+# Runtime cryptographic material and generated agent state
+/agents/keys/
+/agents/public-keys.json
+/agents/*-log.json
+/agents/latest-report.json
+/agents/registry.json
+/agents/peers.json
+
 # Hardhat coverage reports
 /coverage
 
@@ -29,6 +37,3 @@
 
 # Snapshot cheatcodes output
 /snapshots
-
-/home/ayush/cgt/minidex-agent/agents/report-agent-v2.js
-agents/peers.json
