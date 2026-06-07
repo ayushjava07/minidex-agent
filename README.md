@@ -93,6 +93,10 @@ See the [Threat Model](docs/threat-model.md) and
 npx hardhat ignition deploy ./ignition/modules/Deploy.js --network sepolia
 ```
 
+The deployment mints `1,000,000` TokenA and TokenB tokens to the deployer by default.
+Override `MiniDEXModule.initialSupply` with an Ignition parameters file when a
+different base-unit supply is required.
+
 ### Tests
 
 ```bash
