@@ -13,6 +13,10 @@ function normalizeLevel(level) {
     return normalized
 }
 
+export function loadLoggerConfig(env = process.env) {
+    return Object.freeze({ level: normalizeLevel(env.LOG_LEVEL) })
+}
+
 function normalizeFields(fields) {
     return Object.fromEntries(Object.entries(fields).map(([key, value]) => {
         if (value instanceof Error) {
