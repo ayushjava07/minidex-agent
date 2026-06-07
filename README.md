@@ -138,6 +138,8 @@ npm run analytics
   `NETWORK_MAX_MESSAGE_BYTES`.
 - Authenticated inbound messages use per-sender and per-topic token buckets configured
   by the `NETWORK_RATE_LIMIT_*` variables.
+- Runtime settings are validated together at agent startup, including cross-field retry
+  and replay-window constraints. Validation errors report every invalid configuration section.
 
 ## Frontend
 
