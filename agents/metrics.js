@@ -275,6 +275,49 @@ export const healthMetrics = Object.freeze({
     )
 })
 
+export const runtimeMetrics = Object.freeze({
+    uptimeSeconds: metrics.gauge(
+        'atos_process_uptime_seconds',
+        'Process uptime in seconds.',
+        ['role']
+    ),
+    residentMemoryBytes: metrics.gauge(
+        'atos_process_resident_memory_bytes',
+        'Resident process memory in bytes.',
+        ['role']
+    ),
+    heapUsedBytes: metrics.gauge(
+        'atos_process_heap_used_bytes',
+        'Used JavaScript heap memory in bytes.',
+        ['role']
+    ),
+    heapTotalBytes: metrics.gauge(
+        'atos_process_heap_total_bytes',
+        'Allocated JavaScript heap memory in bytes.',
+        ['role']
+    ),
+    externalMemoryBytes: metrics.gauge(
+        'atos_process_external_memory_bytes',
+        'Process external memory in bytes.',
+        ['role']
+    ),
+    cpuUserSeconds: metrics.gauge(
+        'atos_process_cpu_user_seconds',
+        'User CPU seconds consumed during the latest collection interval.',
+        ['role']
+    ),
+    cpuSystemSeconds: metrics.gauge(
+        'atos_process_cpu_system_seconds',
+        'System CPU seconds consumed during the latest collection interval.',
+        ['role']
+    ),
+    eventLoopLagSeconds: metrics.gauge(
+        'atos_process_event_loop_lag_seconds',
+        'Observed event loop scheduling lag in seconds.',
+        ['role']
+    )
+})
+
 export function classifyMetricError(error) {
     const message = error?.message ?? ''
     if (error?.code === 'RATE_LIMITED') return 'rate_limit'
