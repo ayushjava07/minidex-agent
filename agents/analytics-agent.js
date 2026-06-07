@@ -381,4 +381,4 @@ async function main() {
     process.on('SIGTERM', shutdown)
 }
 
-main().catch(console.error)
+main().catch(err => { console.error(`[analytics] Fatal:`, err); process.exit(1) })
