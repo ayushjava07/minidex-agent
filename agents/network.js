@@ -10,23 +10,23 @@ import { toString }     from 'uint8arrays/to-string'
 import { fromString }   from 'uint8arrays/from-string'
 import { multiaddr }    from '@multiformats/multiaddr'
 import { createLogger } from './logger.js'
-import { loadRetryConfig, withRetry } from './retry.js'
-import {
-    loadMessageValidationConfig,
-    parseMessage
-} from './message-schema.js'
+import { classifyMetricError, networkMetrics } from './metrics.js'
+import { createMessageRateLimiter } from './rate-limit.js'
+import { isTransientNetworkError, withRetry } from './retry.js'
+import { parseMessage, validateMessageTopic } from './message-schema.js'
 import {
     createAuthenticatedEnvelope,
     createReplayProtector,
-    loadMessageAuthConfig,
-    verifyMessageAuthentication
 } from './message-auth.js'
+import { createInboundSecurityMiddleware } from './message-middleware.js'
+import { topicSchemas } from './topic-schema.js'
+import { createMessageDispatcher, loadMessageDispatchConfig } from './message-dispatch.js'
+import { bestEffortDelivery, createDeliveryPolicy } from './delivery-policy.js'
+import { loadRuntimeConfig } from '../config/runtime.js'
 
 // ── Constants ──────────────────────────────────────────
 const PROTOCOL    = '/atos/1.0.0'
 const logger      = createLogger('network')
-const retryConfig = loadRetryConfig()
-const messageConfig = loadMessageValidationConfig()
 
 const AGENT_PORTS = {
     deploy   : 4001,
@@ -42,7 +42,10 @@ const agentRegistry = new Map()
 
 // ── Topic handlers, isolated per node ──────────────────
 const topicHandlers = new WeakMap()
-const replayProtectors = new WeakMap()
+const runtimeConfigs = new WeakMap()
+const inboundSecurityMiddleware = new WeakMap()
+const messageDispatchers = new WeakMap()
+const stoppedNodes = new WeakSet()
 
 // ── Helpers ────────────────────────────────────────────
 function getUniquePeerCount(node) {
@@ -55,7 +58,34 @@ function getUniquePeerCount(node) {
     }).length
 }
 
+function samePeer(left, right) {
+    return left?.toString() === right?.toString()
+}
+
+function attachRegistryCleanup(node, role) {
+    const stopNode = node.stop.bind(node)
+    node.stop = async () => {
+        if (stoppedNodes.has(node)) return
+        stoppedNodes.add(node)
+        try {
+            await stopNode()
+        } finally {
+            const registered = agentRegistry.get(role)
+            if (registered && samePeer(registered.peerId, node.peerId)) {
+                agentRegistry.delete(role)
+                networkMetrics.connectedPeers.set({ role }, 0)
+                logger.info('agent_unregistered', { role, peerId: node.peerId.toString() })
+            }
+            topicHandlers.delete(node)
+            runtimeConfigs.delete(node)
+            inboundSecurityMiddleware.delete(node)
+            messageDispatchers.delete(node)
+        }
+    }
+}
+
 async function dialPeer(node, role, info) {
+    const retryConfig = runtimeConfigs.get(node)?.network.retry ?? loadRuntimeConfig().network.retry
     return withRetry(async () => {
         await node.peerStore.merge(info.peerId, {
             multiaddrs: [multiaddr(`/ip4/127.0.0.1/tcp/${info.port}`)]
@@ -63,7 +93,10 @@ async function dialPeer(node, role, info) {
         return node.dial(info.peerId)
     }, {
         ...retryConfig,
+        jitterRatio: 0.2,
+        shouldRetry: isTransientNetworkError,
         onRetry: ({ attempt, delayMs, error }) => {
+            networkMetrics.connectionRetries.inc({ role: node.role, target_role: role })
             logger.warn('peer_connection_retry', {
                 role: node.role,
                 peerRole: role,
@@ -77,7 +110,8 @@ async function dialPeer(node, role, info) {
 
 // ─────────────────────────────────────────────────────────
 export async function createAgentNode(role) {
-    const authConfig = loadMessageAuthConfig()
+    const runtimeConfig = loadRuntimeConfig()
+    const { authentication: authConfig, validation: messageConfig, rateLimit: rateLimitConfig } = runtimeConfig.network
     const port = AGENT_PORTS[role]
     if (!port) throw new Error(`Unknown role: ${role}`)
 
@@ -108,20 +142,26 @@ export async function createAgentNode(role) {
             }
             const raw     = chunks.map(c => toString(c)).join('')
             const message = parseMessage(raw, messageConfig)
-            verifyMessageAuthentication(message, authConfig.secret)
-            replayProtectors.get(node).assertFresh(message)
+            await inboundSecurityMiddleware.get(node)({ message })
 
+            networkMetrics.messageBytes.observe({ direction: 'inbound', role }, receivedBytes)
+            networkMetrics.messagesReceived.inc({ role, topic: message.topic })
             logger.info('message_received', { role, topic: message.topic, from: message.from })
 
             const handlers = topicHandlers.get(node)?.get(message.topic)
             if (handlers) {
-                for (const h of handlers) {
-                    try { await h(message.data) } catch (e) {
-                        logger.error('topic_handler_failed', { role, topic: message.topic, error: e })
-                    }
-                }
+                await messageDispatchers.get(node).dispatch(handlers, message.data, {
+                    role,
+                    topic: message.topic,
+                    from: message.from
+                })
             }
         } catch (err) {
+            networkMetrics.messageFailures.inc({
+                direction: 'inbound',
+                reason: classifyMetricError(err),
+                role
+            })
             logger.error('message_handler_failed', { role, error: err })
         } finally {
             await stream.close().catch(error => {
@@ -132,11 +172,14 @@ export async function createAgentNode(role) {
 
     // ── Connection events ─────────────────────────────
     node.addEventListener('peer:connect', () => {
-        logger.info('peer_connected', { role, peers: getUniquePeerCount(node) })
+        const peers = getUniquePeerCount(node)
+        networkMetrics.connectedPeers.set({ role }, peers)
+        logger.info('peer_connected', { role, peers })
     })
 
     node.addEventListener('peer:disconnect', () => {
         const cnt = getUniquePeerCount(node)
+        networkMetrics.connectedPeers.set({ role }, cnt)
         if (cnt === 0) return
         logger.warn('peer_disconnected', { role, peers: cnt })
     })
@@ -148,9 +191,36 @@ export async function createAgentNode(role) {
         peerId : node.peerId,
         port   : port
     })
+    attachRegistryCleanup(node, role)
 
     node.role = role
-    replayProtectors.set(node, createReplayProtector(authConfig))
+    const replayProtector = createReplayProtector(authConfig)
+    const messageRateLimiter = createMessageRateLimiter(rateLimitConfig)
+    inboundSecurityMiddleware.set(node, createInboundSecurityMiddleware({
+        secret: authConfig.secret,
+        topicSchemas,
+        replayProtector,
+        rateLimiter: messageRateLimiter,
+        onRateLimited: ({ message }, error) => networkMetrics.messagesRateLimited.inc({
+            role,
+            sender: message.from,
+            scope: error.scope,
+            topic: message.topic
+        })
+    }))
+    runtimeConfigs.set(node, runtimeConfig)
+    messageDispatchers.set(node, createMessageDispatcher({
+        ...loadMessageDispatchConfig(),
+        onError: (error, context) => {
+            networkMetrics.handlerFailures.inc({
+                reason: error.code === 'HANDLER_TIMEOUT' ? 'timeout' : 'error',
+                role,
+                topic: context.topic
+            })
+            logger.error('topic_handler_failed', { ...context, error })
+        }
+    }))
+    networkMetrics.connectedPeers.set({ role }, 0)
 
     logger.info('agent_started', {
         role,
@@ -198,8 +268,12 @@ export async function connectToAllPeers(node) {
 }
 
 // ─────────────────────────────────────────────────────────
-export async function publishMessage(node, topic, data) {
-    const authConfig = loadMessageAuthConfig()
+export async function publishMessage(node, topic, data, options = {}) {
+    const authConfig = (runtimeConfigs.get(node) ?? loadRuntimeConfig()).network.authentication
+    const deliveryPolicy = options.deliveryPolicy
+        ? createDeliveryPolicy(options.deliveryPolicy)
+        : bestEffortDelivery
+    topicSchemas.validate({ topic, data })
     // Get existing connections
     let seen = new Set()
     let unique = node.getConnections().filter(c => {
@@ -228,12 +302,13 @@ export async function publishMessage(node, topic, data) {
 
     if (unique.length === 0) {
         logger.warn('broadcast_no_peers', { role: node.role, topic })
-        return { sent: 0, total: 0 }
+        return deliveryPolicy.assert({ sent: 0, total: 0 })
     }
 
     const payload = JSON.stringify(createAuthenticatedEnvelope(topic, data, node.role, {
         config: authConfig
     }))
+    const payloadBytes = Buffer.byteLength(payload, 'utf8')
 
     let sent = 0
 
@@ -243,12 +318,19 @@ export async function publishMessage(node, topic, data) {
             stream.sendData(new Uint8ArrayList(fromString(payload)))
             await stream.close()
             sent++
+            networkMetrics.messageBytes.observe({ direction: 'outbound', role: node.role }, payloadBytes)
+            networkMetrics.messagesSent.inc({ role: node.role, topic })
             logger.debug('message_sent', {
                 role: node.role,
                 topic,
                 peerId: conn.remotePeer.toString()
             })
         } catch (err) {
+            networkMetrics.messageFailures.inc({
+                direction: 'outbound',
+                reason: classifyMetricError(err),
+                role: node.role
+            })
             logger.warn('message_send_failed', {
                 role: node.role,
                 topic,
@@ -258,21 +340,37 @@ export async function publishMessage(node, topic, data) {
         }
     }
 
-    logger.info('broadcast_completed', { role: node.role, topic, sent, total: unique.length })
-    return { sent, total: unique.length }
+    const result = { sent, total: unique.length }
+    logger.info('broadcast_completed', { role: node.role, topic, ...result })
+    return deliveryPolicy.assert(result)
 }
 
 // ─────────────────────────────────────────────────────────
 export function subscribeToTopic(node, topic, handler) {
+    if (typeof handler !== 'function') throw new Error('Topic handler must be a function')
+    validateMessageTopic(topic)
     if (!topicHandlers.has(node)) {
         topicHandlers.set(node, new Map())
     }
     const nodeHandlers = topicHandlers.get(node)
     if (!nodeHandlers.has(topic)) {
-        nodeHandlers.set(topic, [])
+        nodeHandlers.set(topic, new Set())
     }
-    nodeHandlers.get(topic).push(handler)
+    const handlers = nodeHandlers.get(topic)
+    if (handlers.has(handler)) throw new Error(`Handler already subscribed to topic: ${topic}`)
+    handlers.add(handler)
     logger.info('topic_subscribed', { role: node.role, topic })
+
+    let active = true
+    return () => {
+        if (!active) return false
+        active = false
+        const removed = handlers.delete(handler)
+        if (handlers.size === 0) nodeHandlers.delete(topic)
+        if (nodeHandlers.size === 0) topicHandlers.delete(node)
+        if (removed) logger.info('topic_unsubscribed', { role: node.role, topic })
+        return removed
+    }
 }
 
 // ─────────────────────────────────────────────────────────

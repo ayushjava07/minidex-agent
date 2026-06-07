@@ -56,6 +56,19 @@ describe('network.js — createAgentNode', () => {
       expect(agentRegistry.get(role).port).toBe(AGENT_PORTS[role])
     }
   })
+
+  it('should unregister a stopped node without removing a newer replacement', async () => {
+    const { createAgentNode, agentRegistry } = network
+    const original = await createAgentNode('monitor')
+    const replacement = await createAgentNode('monitor')
+
+    await original.stop()
+    expect(agentRegistry.get('monitor').peerId).toBe(replacement.peerId)
+
+    await replacement.stop()
+    await replacement.stop()
+    expect(agentRegistry.has('monitor')).toBe(false)
+  })
 })
 
 describe('network.js — connectToAllPeers', () => {
@@ -135,6 +148,20 @@ describe('network.js — publishMessage', () => {
     const result = await publishMessage(node, 'test', {})
     expect(result).toEqual({ sent: 0, total: 0 })
   })
+
+  it('should reject a broadcast that violates its delivery policy', async () => {
+    const { publishMessage } = network
+    agentRegistry.clear()
+    const node = createMockLibp2pNode({ role: 'deploy' })
+    node.getConnections.mockReturnValue([])
+
+    await expect(publishMessage(node, 'test', {}, {
+      deliveryPolicy: { minRecipients: 1 },
+    })).rejects.toMatchObject({
+      code: 'DELIVERY_POLICY_FAILED',
+      result: { sent: 0, total: 0 },
+    })
+  })
 })
 
 describe('network.js — subscribeToTopic', () => {
@@ -159,6 +186,23 @@ describe('network.js — subscribeToTopic', () => {
     const node = createMockLibp2pNode({ role: 'deploy' })
     subscribeToTopic(node, 'heartbeat', vi.fn())
     subscribeToTopic(node, 'heartbeat', vi.fn())
+  })
+
+  it('should return an idempotent unsubscribe function and reject duplicates', async () => {
+    const { subscribeToTopic } = network
+    const node = createMockLibp2pNode({ role: 'deploy' })
+    const handler = vi.fn()
+    const unsubscribe = subscribeToTopic(node, 'broadcast-test', handler)
+
+    expect(() => subscribeToTopic(node, 'broadcast-test', handler)).toThrow('already subscribed')
+    expect(unsubscribe()).toBe(true)
+    expect(unsubscribe()).toBe(false)
+  })
+
+  it('should reject invalid topic handlers', async () => {
+    const { subscribeToTopic } = network
+    const node = createMockLibp2pNode({ role: 'deploy' })
+    expect(() => subscribeToTopic(node, 'broadcast-test', null)).toThrow('must be a function')
   })
 })
 

@@ -3,6 +3,7 @@ import { logTask, logExecution, printDAG } from './ipld-logger.js'
 import { generateKeys, encryptMessage } from './pqc.js'
 import { loadDeploymentAddressConfig } from '../config/env.js'
 import { startHealthServer } from './health.js'
+import { createTaskScheduler } from './task-scheduler.js'
 import 'dotenv/config'
 
 const deployment = loadDeploymentAddressConfig()
@@ -32,6 +33,9 @@ async function waitForPeer(node, timeoutMs = 15000) {
 
 async function main() {
     console.log("=== Deploy Agent v2 ===")
+    const scheduler = createTaskScheduler({
+        onError: (error, task) => console.error(`[Deploy] Scheduled task ${task.name} failed:`, error)
+    })
 
     const node = await createAgentNode('deploy')
     const health = await startHealthServer(node)
@@ -166,13 +170,13 @@ async function main() {
 
     printDAG(rootTaskCID)
 
-    setInterval(async () => {
+    scheduler.every('heartbeat', 10000, async () => {
         await publishMessage(node, 'heartbeat', {
             agent:     'deploy',
             status:    'active',
             timestamp: new Date().toISOString()
         })
-    }, 10000)
+    })
 
     const shutdown = async () => {
         await logTask({
@@ -185,6 +189,7 @@ async function main() {
         })
 
         console.log('\nStopping Deploy Agent...')
+        await scheduler.stopAll()
         await health.stop()
         await node.stop()
         process.exit(0)

@@ -203,11 +203,28 @@ docker run --rm --init --env-file .env \
 
 - Network logs are JSON; set `LOG_LEVEL` to `debug`, `info`, `warn`, or `error`.
 - Liveness and readiness are available at `/health/live` and `/health/ready`.
+- Prometheus metrics are available at `/metrics` on each agent health port.
+- Runtime metrics include process uptime, memory, CPU deltas, and event-loop lag.
 - Health ports are `4101` through `4105` in agent role order.
-- `HEALTH_MIN_PEERS` controls readiness.
+- `HEALTH_MIN_PEERS` controls readiness, while `HEALTH_HOST` selects the health endpoint bind interface.
+- Readiness runs timeout-bound dependency checks; optional check failures report `degraded`
+  without removing the agent from service.
 - Peer dials use bounded backoff configured by the `NETWORK_RETRY_*` variables.
+- Peer retry delays include jitter, skip permanent failures, and support cancellation.
+- Retry managers can be guarded by circuit breakers with closed, open, and half-open
+  recovery states.
 - Inbound messages are rejected when they violate the envelope schema or exceed
   `NETWORK_MAX_MESSAGE_BYTES`.
+- Authenticated inbound messages use per-sender and per-topic token buckets configured
+  by the `NETWORK_RATE_LIMIT_*` variables.
+- Hierarchical global, sender, and sender/topic quotas protect against distributed floods,
+  with bounded state and inspectable limiter statistics.
+- Inbound security runs as an ordered middleware pipeline: authentication, replay
+  protection, then rate limiting.
+- Known message topics enforce payload schemas on send and receive; custom schemas can
+  be registered for new topics.
+- Runtime settings are validated together at agent startup, including cross-field retry
+  and replay-window constraints. Validation errors report every invalid configuration section.
 
 ## Frontend
 
