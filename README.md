@@ -83,6 +83,9 @@ Data Layer (IPLD + CID DAG)
 - `removeLiquidity(amountA, amountB)`
 - `getReserves()`
 
+Analytics consumes `Swapped(user, tokenIn, amountIn, amountOut)`. Existing
+deployments must be redeployed after changing this event signature.
+
 ---
 
 ## 🤖 Multi-Agent System

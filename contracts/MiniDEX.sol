@@ -13,7 +13,7 @@ contract MiniDEX {
 
     event LiquidityAdded(uint amountA, uint amountB);
     event LiquidityRemoved(address indexed provider, uint amountA, uint amountB);
-    event Swapped(address user, uint amountIn, uint amountOut);
+    event Swapped(address indexed user, address indexed tokenIn, uint amountIn, uint amountOut);
 
     constructor(address _tokenA, address _tokenB) {
         tokenA = IERC20(_tokenA);
@@ -54,7 +54,7 @@ contract MiniDEX {
             reserveA -= amountOut;
         }
         
-        emit Swapped(msg.sender, amountIn, amountOut);
+        emit Swapped(msg.sender, tokenIn, amountIn, amountOut);
     }
 
     // Remove Liquidity

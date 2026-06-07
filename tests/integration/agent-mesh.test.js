@@ -62,6 +62,23 @@ describe('agent-mesh integration', () => {
 
     const result = await publishMessage(nodes[0], 'broadcast-test', { msg: 'hello' })
     expect(result.sent).toBe(AGENT_ROLES.length - 1)
+
+    // Simulate message delivery on each receiving node
+    const sender = nodes[0]
+    for (let i = 1; i < nodes.length; i++) {
+      if (nodes[i]._simulateMessage) {
+        await nodes[i]._simulateMessage('broadcast-test', { msg: 'hello' }, sender.role)
+      }
+    }
+
+    // Verify each non-sender agent received the message
+    for (let i = 1; i < AGENT_ROLES.length; i++) {
+      const role = AGENT_ROLES[i]
+      expect(received[role].length).toBeGreaterThanOrEqual(1)
+      if (received[role].length > 0) {
+        expect(received[role][0]).toHaveProperty('msg', 'hello')
+      }
+    }
   })
 
   it('should handle agent start failure gracefully', async () => {

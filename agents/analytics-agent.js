@@ -2,6 +2,7 @@ import { createAgentNode, publishMessage, subscribeToTopic } from './network.js'
 import { logTask, logExecution, printDAG } from './ipld-logger.js'
 import { generateKeys } from './pqc.js'
 import { loadReadOnlyAgentConfig } from '../config/env.js'
+import { summarizeSwapEvents } from './workflows/analytics.js'
 import { ethers } from 'ethers'
 import 'dotenv/config'
 
@@ -9,7 +10,8 @@ const { rpcUrl: RPC_URL, dexAddress: DEX_ADDRESS } = loadReadOnlyAgentConfig()
 
 const DEX_ABI = [
     "function getReserves() view returns (uint, uint)",
-    "event Swapped(address user, uint amountIn, uint amountOut)",
+    "function tokenA() view returns (address)",
+    "event Swapped(address indexed user, address indexed tokenIn, uint amountIn, uint amountOut)",
     "event LiquidityAdded(uint amountA, uint amountB)"
 ]
 
@@ -54,19 +56,17 @@ async function fetchSwapHistory(node) {
 
         let swapEvents = []
         try {
-            swapEvents = await dex.queryFilter('Swap', fromBlock, currentBlock)
+            swapEvents = await dex.queryFilter('Swapped', fromBlock, currentBlock)
         } catch {
             // Some RPC providers limit event queries
             console.log('[Analytics] Event query limited — using reserve snapshot')
         }
 
-        swapCount    = swapEvents.length
-        totalVolumeA = swapEvents
-            .filter(e => e.args.AtoB)
-            .reduce((sum, e) => sum + e.args.amountIn, 0n)
-        totalVolumeB = swapEvents
-            .filter(e => !e.args.AtoB)
-            .reduce((sum, e) => sum + e.args.amountIn, 0n)
+        const tokenAAddress = await dex.tokenA()
+        const summary = summarizeSwapEvents(swapEvents, tokenAAddress)
+        swapCount    = summary.swapCount
+        totalVolumeA = summary.totalVolumeA
+        totalVolumeB = summary.totalVolumeB
 
         const taskCID = await logTask({
             peerId:      node.peerId.toString(),
