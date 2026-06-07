@@ -53,6 +53,18 @@ export function replayProtectionMiddleware(protector) {
     }
 }
 
+export function topicValidationMiddleware(registry) {
+    if (!registry || typeof registry.validate !== 'function') {
+        throw new Error('Topic validation middleware requires a schema registry')
+    }
+
+    return async (context, next) => {
+        registry.validate(context.message)
+        context.schemaValidated = true
+        await next()
+    }
+}
+
 export function rateLimitMiddleware(limiter, options = {}) {
     if (!limiter || typeof limiter.consume !== 'function') {
         throw new Error('Rate limit middleware requires a limiter')
@@ -74,9 +86,11 @@ export function createInboundSecurityMiddleware(options) {
         throw new Error('Inbound security middleware options are required')
     }
 
-    return composeMessageMiddleware([
-        authenticationMiddleware(options.secret),
+    const middleware = [authenticationMiddleware(options.secret)]
+    if (options.topicSchemas) middleware.push(topicValidationMiddleware(options.topicSchemas))
+    middleware.push(
         replayProtectionMiddleware(options.replayProtector),
         rateLimitMiddleware(options.rateLimiter, { onRateLimited: options.onRateLimited })
-    ])
+    )
+    return composeMessageMiddleware(middleware)
 }

@@ -141,6 +141,8 @@ npm run analytics
   by the `NETWORK_RATE_LIMIT_*` variables.
 - Inbound security runs as an ordered middleware pipeline: authentication, replay
   protection, then rate limiting.
+- Known message topics enforce payload schemas on send and receive; custom schemas can
+  be registered for new topics.
 - Runtime settings are validated together at agent startup, including cross-field retry
   and replay-window constraints. Validation errors report every invalid configuration section.
 
