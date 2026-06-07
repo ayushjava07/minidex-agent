@@ -1,23 +1,6 @@
 import { ethers } from "ethers";
 import "dotenv/config";
-
-const {
-    RPC_URL,
-    SEPOLIA_PRIVATE_KEY,
-    TOKEN_A,
-    TOKEN_B,
-    DEX_ADDRESS,
-    LIQUIDITY_AMOUNT = "1000",
-} = process.env;
-
-const required = { RPC_URL, SEPOLIA_PRIVATE_KEY, TOKEN_A, TOKEN_B, DEX_ADDRESS };
-const missing = Object.entries(required)
-    .filter(([, value]) => !value)
-    .map(([name]) => name);
-
-if (missing.length > 0) {
-    throw new Error(`Missing required environment variables: ${missing.join(", ")}`);
-}
+import { loadLiquidityConfig } from "../config/env.js";
 
 const ERC20_ABI = [
     "function approve(address spender, uint amount) returns (bool)",
@@ -30,20 +13,21 @@ const DEX_ABI = [
 ];
 
 async function main() {
-    const provider = new ethers.JsonRpcProvider(RPC_URL);
-    const wallet = new ethers.Wallet(SEPOLIA_PRIVATE_KEY, provider);
+    const config = loadLiquidityConfig();
+    const provider = new ethers.JsonRpcProvider(config.rpcUrl);
+    const wallet = new ethers.Wallet(config.privateKey, provider);
 
-    const tokenA = new ethers.Contract(TOKEN_A, ERC20_ABI, wallet);
-    const tokenB = new ethers.Contract(TOKEN_B, ERC20_ABI, wallet);
-    const dex = new ethers.Contract(DEX_ADDRESS, DEX_ABI, wallet);
+    const tokenA = new ethers.Contract(config.tokenA, ERC20_ABI, wallet);
+    const tokenB = new ethers.Contract(config.tokenB, ERC20_ABI, wallet);
+    const dex = new ethers.Contract(config.dexAddress, DEX_ABI, wallet);
 
-    const amount = ethers.parseEther(LIQUIDITY_AMOUNT);
+    const amount = ethers.parseEther(config.liquidityAmount);
 
     console.log("Approving TokenA...");
-    await (await tokenA.approve(DEX_ADDRESS, amount)).wait();
+    await (await tokenA.approve(config.dexAddress, amount)).wait();
 
     console.log("Approving TokenB...");
-    await (await tokenB.approve(DEX_ADDRESS, amount)).wait();
+    await (await tokenB.approve(config.dexAddress, amount)).wait();
 
     console.log("Adding liquidity...");
     await (await dex.addLiquidity(amount, amount)).wait();
