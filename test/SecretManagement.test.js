@@ -100,6 +100,38 @@ describe("Secret management", function () {
         }
     });
 
+    it("scans source files when git metadata is unavailable", function () {
+        const fixture = fs.mkdtempSync(path.join(os.tmpdir(), "minidex-secret-source-test-"));
+        fs.writeFileSync(path.join(fixture, "config.js"), `const PRIVATE_KEY = "${"b".repeat(64)}";\n`);
+        fs.mkdirSync(path.join(fixture, "node_modules"), { recursive: true });
+        fs.writeFileSync(
+            path.join(fixture, "node_modules", "ignored.js"),
+            `const PRIVATE_KEY = "${"c".repeat(64)}";\n`,
+        );
+
+        try {
+            const findings = scanTrackedFiles(fixture);
+            expect(findings).to.have.lengthOf(1);
+            expect(findings[0]).to.include("config.js:1: hardcoded hexadecimal private key");
+        } finally {
+            fs.rmSync(fixture, { recursive: true, force: true });
+        }
+    });
+
+    it("ignores tracked files deleted from the working tree", function () {
+        const fixture = createGitFixture({
+            "deleted-secret.js": `const PRIVATE_KEY = "${"d".repeat(64)}";\n`,
+            "safe.js": "export const safe = true;\n",
+        });
+        fs.rmSync(path.join(fixture, "deleted-secret.js"));
+
+        try {
+            expect(scanTrackedFiles(fixture)).to.deep.equal([]);
+        } finally {
+            fs.rmSync(fixture, { recursive: true, force: true });
+        }
+    });
+
     it("contains no committed secrets in this repository", function () {
         expect(() => assertNoCommittedSecrets()).to.not.throw();
     });
