@@ -3,6 +3,7 @@ import { logTask, logExecution, printDAG } from './ipld-logger.js'
 import { generateKeys, encryptMessage, decryptMessage } from './pqc.js'
 import { loadReadOnlyAgentConfig } from '../config/env.js'
 import { startHealthServer } from './health.js'
+import { createTaskScheduler } from './task-scheduler.js'
 import { ethers } from 'ethers'
 import 'dotenv/config'
 
@@ -242,6 +243,9 @@ async function suggestRebalance(node, ratioData) {
 // ── Main ──────────────────────────────────────────────
 async function main() {
     console.log("=== Liquidity Manager Agent v1 ===")
+    const scheduler = createTaskScheduler({
+        onError: (error, task) => console.error(`[Liquidity] Scheduled task ${task.name} failed:`, error)
+    })
 
     const node = await createAgentNode('liquidity')
     const health = await startHealthServer(node)
@@ -294,20 +298,20 @@ async function main() {
     await suggestRebalance(node, ratioData)
 
     // Repeat every 30 seconds
-    setInterval(async () => {
+    scheduler.every('liquidity-analysis', 30000, async () => {
         const data = await checkReserveRatio(node)
         await checkImbalanceAlert(node, data)
         await suggestRebalance(node, data)
-    }, 30000)
+    })
 
     // Heartbeat
-    setInterval(async () => {
+    scheduler.every('heartbeat', 10000, async () => {
         await publishMessage(node, 'heartbeat', {
             agent:     'liquidity',
             status:    'active',
             timestamp: new Date().toISOString()
         })
-    }, 10000)
+    })
 
     const shutdown = async () => {
         await logTask({
@@ -320,6 +324,7 @@ async function main() {
         })
 
         console.log('\nStopping Liquidity Manager Agent...')
+        await scheduler.stopAll()
         await health.stop()
         await node.stop()
         process.exit(0)

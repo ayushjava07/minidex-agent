@@ -4,6 +4,7 @@ import { generateKeys } from './pqc.js'
 import { loadReadOnlyAgentConfig } from '../config/env.js'
 import { summarizeSwapEvents } from './workflows/analytics.js'
 import { startHealthServer } from './health.js'
+import { createTaskScheduler } from './task-scheduler.js'
 import { ethers } from 'ethers'
 import 'dotenv/config'
 
@@ -283,6 +284,9 @@ async function generateAnalyticsReport(node, swapData, statsData) {
 // ── Main ──────────────────────────────────────────────
 async function main() {
     console.log("=== Analytics Agent v1 ===")
+    const scheduler = createTaskScheduler({
+        onError: (error, task) => console.error(`[Analytics] Scheduled task ${task.name} failed:`, error)
+    })
 
     const node = await createAgentNode('analytics')
     const health = await startHealthServer(node)
@@ -347,20 +351,20 @@ async function main() {
     await generateAnalyticsReport(node, swapData, statsData)
 
     // Repeat every 60 seconds
-    setInterval(async () => {
+    scheduler.every('analytics-report', 60000, async () => {
         const swap  = await fetchSwapHistory(node)
         const stats = await calculatePoolStats(node, swap)
         await generateAnalyticsReport(node, swap, stats)
-    }, 60000)
+    })
 
     // Heartbeat
-    setInterval(async () => {
+    scheduler.every('heartbeat', 10000, async () => {
         await publishMessage(node, 'heartbeat', {
             agent:     'analytics',
             status:    'active',
             timestamp: new Date().toISOString()
         })
-    }, 10000)
+    })
 
     const shutdown = async () => {
         await logTask({
@@ -373,6 +377,7 @@ async function main() {
         })
 
         console.log('\nStopping Analytics Agent...')
+        await scheduler.stopAll()
         await health.stop()
         await node.stop()
         process.exit(0)
