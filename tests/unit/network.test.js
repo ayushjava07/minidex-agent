@@ -173,6 +173,23 @@ describe('network.js — subscribeToTopic', () => {
     subscribeToTopic(node, 'heartbeat', vi.fn())
     subscribeToTopic(node, 'heartbeat', vi.fn())
   })
+
+  it('should return an idempotent unsubscribe function and reject duplicates', async () => {
+    const { subscribeToTopic } = network
+    const node = createMockLibp2pNode({ role: 'deploy' })
+    const handler = vi.fn()
+    const unsubscribe = subscribeToTopic(node, 'broadcast-test', handler)
+
+    expect(() => subscribeToTopic(node, 'broadcast-test', handler)).toThrow('already subscribed')
+    expect(unsubscribe()).toBe(true)
+    expect(unsubscribe()).toBe(false)
+  })
+
+  it('should reject invalid topic handlers', async () => {
+    const { subscribeToTopic } = network
+    const node = createMockLibp2pNode({ role: 'deploy' })
+    expect(() => subscribeToTopic(node, 'broadcast-test', null)).toThrow('must be a function')
+  })
 })
 
 describe('network.js — getNetworkStatus', () => {
