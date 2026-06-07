@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            frontend/package-lock.json
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install frontend dependencies
+        run: npm ci --prefix frontend
+
+      - name: Check for committed secrets
+        run: npm run check:secrets
+
+      - name: Run contract tests
+        run: npm run test:contracts
+
+      - name: Run agent tests
+        run: npm run test:agents
+
+      - name: Run secret management tests
+        run: npm run test:security
+
+      - name: Run local network integration
+        run: npm run test:network
+
+      - name: Validate local deployment
+        run: npx hardhat ignition deploy ./ignition/modules/Deploy.js --network hardhat
+
+      - name: Build frontend
+        run: npm run build:frontend

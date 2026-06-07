@@ -1,25 +1,25 @@
 import { expect } from "chai";
 import { generateKeys, encryptMessage, decryptMessage } from "../agents/pqc.js";
 import fs from "fs";
+import os from "os";
 import path from "path";
 
 describe("PQC (Post-Quantum Cryptography)", function () {
     const role1 = "test-agent-1";
     const role2 = "test-agent-2";
     const message = "Hello, this is a secret message!";
+    let tempDir;
 
     before(function () {
-        // Clean up any existing keys for test roles
-        const keysDir = path.join(process.cwd(), "agents", "keys");
-        const roles = [role1, role2];
-        roles.forEach(role => {
-            ["public", "secret"].forEach(type => {
-                const keyPath = path.join(keysDir, `${role}-${type}.key`);
-                if (fs.existsSync(keyPath)) {
-                    fs.unlinkSync(keyPath);
-                }
-            });
-        });
+        tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "minidex-pqc-test-"));
+        process.env.AGENT_KEYS_DIR = path.join(tempDir, "keys");
+        process.env.AGENT_PUBLIC_KEYS_FILE = path.join(tempDir, "public-keys.json");
+    });
+
+    after(function () {
+        delete process.env.AGENT_KEYS_DIR;
+        delete process.env.AGENT_PUBLIC_KEYS_FILE;
+        fs.rmSync(tempDir, { recursive: true, force: true });
     });
 
     it("Should generate keys for agents", function () {
@@ -30,6 +30,7 @@ describe("PQC (Post-Quantum Cryptography)", function () {
         expect(keys1).to.have.property("secretKey");
         expect(keys2).to.have.property("publicKey");
         expect(keys2).to.have.property("secretKey");
+        expect(fs.statSync(path.join(process.env.AGENT_KEYS_DIR, `${role1}-secret.key`)).mode & 0o777).to.equal(0o600);
     });
 
     it("Should encrypt and decrypt a message between two agents", function () {
