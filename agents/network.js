@@ -42,6 +42,7 @@ const agentRegistry = new Map()
 const topicHandlers = new WeakMap()
 const runtimeConfigs = new WeakMap()
 const inboundSecurityMiddleware = new WeakMap()
+const stoppedNodes = new WeakSet()
 
 // ── Helpers ────────────────────────────────────────────
 function getUniquePeerCount(node) {
@@ -52,6 +53,28 @@ function getUniquePeerCount(node) {
         seen.add(id)
         return true
     }).length
+}
+
+function samePeer(left, right) {
+    return left?.toString() === right?.toString()
+}
+
+function attachRegistryCleanup(node, role) {
+    const stopNode = node.stop.bind(node)
+    node.stop = async () => {
+        if (stoppedNodes.has(node)) return
+        stoppedNodes.add(node)
+        try {
+            await stopNode()
+        } finally {
+            const registered = agentRegistry.get(role)
+            if (registered && samePeer(registered.peerId, node.peerId)) {
+                agentRegistry.delete(role)
+                networkMetrics.connectedPeers.set({ role }, 0)
+                logger.info('agent_unregistered', { role, peerId: node.peerId.toString() })
+            }
+        }
+    }
 }
 
 async function dialPeer(node, role, info) {
@@ -161,6 +184,7 @@ export async function createAgentNode(role) {
         peerId : node.peerId,
         port   : port
     })
+    attachRegistryCleanup(node, role)
 
     node.role = role
     const replayProtector = createReplayProtector(authConfig)
