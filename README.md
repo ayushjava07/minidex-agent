@@ -222,7 +222,8 @@ npm test
 npm run check:secrets
 ```
 
-✔ 56 tests passing  
+`npm run test:network` starts the five-agent local mesh and fails unless every
+agent reaches all four peers and every test broadcast reaches all four recipients.
 
 ---
 
