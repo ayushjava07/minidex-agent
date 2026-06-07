@@ -1,40 +1,47 @@
-# Node modules
-/node_modules
+# Dependencies
+/node_modules/
+/frontend/node_modules/
 
-# Compilation output
-/dist
+# Build, compiler, coverage, and deployment output
+/artifacts/
+/build/
+/bundle/
+/cache/
+/coverage/
+/dist/
+/frontend/build/
+/frontend/dist/
+/ignition/deployments/
+/snapshots/
+/typechain-types/
+/types/
+/.gas-snapshot
 
-# pnpm deploy output
-/bundle
-
-# Hardhat Build Artifacts
-/artifacts
-
-# Hardhat compilation (v2) support directory
-/cache
-
-# Typechain output
-/types
-/typechain-types
-
-# Environment files
-.env
-.env.*
-!.env.example
-
-# Runtime cryptographic material and generated agent state
+# Runtime agent state and cryptographic material
 /agents/keys/
 /agents/public-keys.json
 /agents/*-log.json
 /agents/latest-report.json
-/agents/registry.json
 /agents/peers.json
+/agents/registry.json
 
-# Hardhat coverage reports
-/coverage
+# Environment files and credentials
+.env
+.env.*
+!.env.example
 
-# Gas snapshot files
-/.gas-snapshot
+# Logs and temporary files
+*.log
+*.tmp
+/logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
-# Snapshot cheatcodes output
-/snapshots
+# Editor and operating-system files
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*~
