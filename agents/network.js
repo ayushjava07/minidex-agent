@@ -21,6 +21,7 @@ import {
 import { createInboundSecurityMiddleware } from './message-middleware.js'
 import { topicSchemas } from './topic-schema.js'
 import { createMessageDispatcher, loadMessageDispatchConfig } from './message-dispatch.js'
+import { bestEffortDelivery, createDeliveryPolicy } from './delivery-policy.js'
 import { loadRuntimeConfig } from '../config/runtime.js'
 
 // ── Constants ──────────────────────────────────────────
@@ -267,8 +268,11 @@ export async function connectToAllPeers(node) {
 }
 
 // ─────────────────────────────────────────────────────────
-export async function publishMessage(node, topic, data) {
+export async function publishMessage(node, topic, data, options = {}) {
     const authConfig = (runtimeConfigs.get(node) ?? loadRuntimeConfig()).network.authentication
+    const deliveryPolicy = options.deliveryPolicy
+        ? createDeliveryPolicy(options.deliveryPolicy)
+        : bestEffortDelivery
     topicSchemas.validate({ topic, data })
     // Get existing connections
     let seen = new Set()
@@ -298,7 +302,7 @@ export async function publishMessage(node, topic, data) {
 
     if (unique.length === 0) {
         logger.warn('broadcast_no_peers', { role: node.role, topic })
-        return { sent: 0, total: 0 }
+        return deliveryPolicy.assert({ sent: 0, total: 0 })
     }
 
     const payload = JSON.stringify(createAuthenticatedEnvelope(topic, data, node.role, {
@@ -336,8 +340,9 @@ export async function publishMessage(node, topic, data) {
         }
     }
 
-    logger.info('broadcast_completed', { role: node.role, topic, sent, total: unique.length })
-    return { sent, total: unique.length }
+    const result = { sent, total: unique.length }
+    logger.info('broadcast_completed', { role: node.role, topic, ...result })
+    return deliveryPolicy.assert(result)
 }
 
 // ─────────────────────────────────────────────────────────

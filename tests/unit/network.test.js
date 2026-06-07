@@ -148,6 +148,20 @@ describe('network.js — publishMessage', () => {
     const result = await publishMessage(node, 'test', {})
     expect(result).toEqual({ sent: 0, total: 0 })
   })
+
+  it('should reject a broadcast that violates its delivery policy', async () => {
+    const { publishMessage } = network
+    agentRegistry.clear()
+    const node = createMockLibp2pNode({ role: 'deploy' })
+    node.getConnections.mockReturnValue([])
+
+    await expect(publishMessage(node, 'test', {}, {
+      deliveryPolicy: { minRecipients: 1 },
+    })).rejects.toMatchObject({
+      code: 'DELIVERY_POLICY_FAILED',
+      result: { sent: 0, total: 0 },
+    })
+  })
 })
 
 describe('network.js — subscribeToTopic', () => {
