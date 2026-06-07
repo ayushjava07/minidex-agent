@@ -151,6 +151,54 @@ npm run liquidity
 npm run analytics
 ```
 
+## Docker
+
+The default Docker build runs the secret scan, complete test suite, frontend
+production build, and local Hardhat Ignition deployment before producing the
+runtime image. The base image is pinned by digest and the final image contains
+only production dependencies, agent runtime source, schemas, and built frontend
+assets.
+
+### Build
+
+```bash
+docker build --pull --tag minidex-agent:project-silver .
+```
+
+To build only through the validation stage:
+
+```bash
+docker build --pull --target validation --tag minidex-agent:validation .
+```
+
+### Run
+
+Create a local environment file from `.env.example`, replace every required
+placeholder, then start all five agents:
+
+```bash
+docker run --rm --init \
+  --name minidex-agent \
+  --env-file .env \
+  --publish 4001-4005:4001-4005 \
+  --publish 4101-4105:4101-4105 \
+  minidex-agent:project-silver
+```
+
+Generated keys and agent logs are written under `/app/agents`. For persistent
+runtime state, mount the specific generated paths required by your deployment.
+Do not bake secrets into the image or pass them as Docker build arguments.
+
+Override the default command to run one operation:
+
+```bash
+docker run --rm --init --env-file .env \
+  minidex-agent:project-silver npm run monitor
+
+docker run --rm --init --env-file .env \
+  minidex-agent:project-silver node scripts/addLiquidity.js
+```
+
 ## Production Operations
 
 - Network logs are JSON; set `LOG_LEVEL` to `debug`, `info`, `warn`, or `error`.

@@ -11,6 +11,15 @@ import {
 } from "../config/env.js";
 import { assertNoCommittedSecrets, scanTrackedFiles } from "../scripts/checkSecrets.js";
 
+const HAS_GIT = (() => {
+    try {
+        execFileSync("git", ["--version"], { stdio: "ignore" });
+        return true;
+    } catch {
+        return false;
+    }
+})();
+
 const VALID_ENV = {
     RPC_URL: "https://rpc.sepolia.example.com/v3/project-id",
     SEPOLIA_PRIVATE_KEY: "1".repeat(64),
@@ -22,7 +31,9 @@ const VALID_ENV = {
 
 function createGitFixture(files) {
     const directory = fs.mkdtempSync(path.join(os.tmpdir(), "minidex-secret-test-"));
-    execFileSync("git", ["init", "-q"], { cwd: directory });
+    if (HAS_GIT) {
+        execFileSync("git", ["init", "-q"], { cwd: directory });
+    }
 
     for (const [fileName, content] of Object.entries(files)) {
         const absolutePath = path.join(directory, fileName);
@@ -30,7 +41,9 @@ function createGitFixture(files) {
         fs.writeFileSync(absolutePath, content);
     }
 
-    execFileSync("git", ["add", "."], { cwd: directory });
+    if (HAS_GIT) {
+        execFileSync("git", ["add", "."], { cwd: directory });
+    }
     return directory;
 }
 
@@ -119,6 +132,8 @@ describe("Secret management", function () {
     });
 
     it("ignores tracked files deleted from the working tree", function () {
+        if (!HAS_GIT) this.skip();
+
         const fixture = createGitFixture({
             "deleted-secret.js": `const PRIVATE_KEY = "${"d".repeat(64)}";\n`,
             "safe.js": "export const safe = true;\n",

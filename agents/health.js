@@ -20,7 +20,7 @@ function sendJson(response, statusCode, body) {
 export async function startHealthServer(node, options = {}) {
     const role = node.role
     const port = options.port ?? HEALTH_PORTS[role]
-    const host = options.host ?? '127.0.0.1'
+    const host = options.host ?? process.env.HEALTH_HOST ?? '127.0.0.1'
     const minPeers = options.minPeers ?? Number(process.env.HEALTH_MIN_PEERS || 1)
     const startedAt = Date.now()
 
