@@ -10,6 +10,7 @@ import { toString }     from 'uint8arrays/to-string'
 import { fromString }   from 'uint8arrays/from-string'
 import { multiaddr }    from '@multiformats/multiaddr'
 import { createLogger } from './logger.js'
+import { classifyMetricError, networkMetrics } from './metrics.js'
 import { loadRetryConfig, withRetry } from './retry.js'
 import {
     loadMessageValidationConfig,
@@ -111,6 +112,8 @@ export async function createAgentNode(role) {
             verifyMessageAuthentication(message, authConfig.secret)
             replayProtectors.get(node).assertFresh(message)
 
+            networkMetrics.messageBytes.observe({ direction: 'inbound', role }, receivedBytes)
+            networkMetrics.messagesReceived.inc({ role, topic: message.topic })
             logger.info('message_received', { role, topic: message.topic, from: message.from })
 
             const handlers = topicHandlers.get(node)?.get(message.topic)
@@ -122,6 +125,11 @@ export async function createAgentNode(role) {
                 }
             }
         } catch (err) {
+            networkMetrics.messageFailures.inc({
+                direction: 'inbound',
+                reason: classifyMetricError(err),
+                role
+            })
             logger.error('message_handler_failed', { role, error: err })
         } finally {
             await stream.close().catch(error => {
@@ -132,11 +140,14 @@ export async function createAgentNode(role) {
 
     // ── Connection events ─────────────────────────────
     node.addEventListener('peer:connect', () => {
-        logger.info('peer_connected', { role, peers: getUniquePeerCount(node) })
+        const peers = getUniquePeerCount(node)
+        networkMetrics.connectedPeers.set({ role }, peers)
+        logger.info('peer_connected', { role, peers })
     })
 
     node.addEventListener('peer:disconnect', () => {
         const cnt = getUniquePeerCount(node)
+        networkMetrics.connectedPeers.set({ role }, cnt)
         if (cnt === 0) return
         logger.warn('peer_disconnected', { role, peers: cnt })
     })
@@ -151,6 +162,7 @@ export async function createAgentNode(role) {
 
     node.role = role
     replayProtectors.set(node, createReplayProtector(authConfig))
+    networkMetrics.connectedPeers.set({ role }, 0)
 
     logger.info('agent_started', {
         role,
@@ -234,6 +246,7 @@ export async function publishMessage(node, topic, data) {
     const payload = JSON.stringify(createAuthenticatedEnvelope(topic, data, node.role, {
         config: authConfig
     }))
+    const payloadBytes = Buffer.byteLength(payload, 'utf8')
 
     let sent = 0
 
@@ -243,12 +256,19 @@ export async function publishMessage(node, topic, data) {
             stream.sendData(new Uint8ArrayList(fromString(payload)))
             await stream.close()
             sent++
+            networkMetrics.messageBytes.observe({ direction: 'outbound', role: node.role }, payloadBytes)
+            networkMetrics.messagesSent.inc({ role: node.role, topic })
             logger.debug('message_sent', {
                 role: node.role,
                 topic,
                 peerId: conn.remotePeer.toString()
             })
         } catch (err) {
+            networkMetrics.messageFailures.inc({
+                direction: 'outbound',
+                reason: classifyMetricError(err),
+                role: node.role
+            })
             logger.warn('message_send_failed', {
                 role: node.role,
                 topic,

@@ -1,5 +1,6 @@
 import { expect } from "chai";
 import { startHealthServer } from "../agents/health.js";
+import { createMetricsRegistry } from "../agents/metrics.js";
 
 describe("Agent health monitoring", function () {
     function createNode(connections) {
@@ -34,5 +35,22 @@ describe("Agent health monitoring", function () {
     it("rejects invalid readiness configuration", async function () {
         await expect(startHealthServer(createNode([]), { port: 0, minPeers: -1 }))
             .to.be.rejectedWith("HEALTH_MIN_PEERS must be a non-negative integer");
+    });
+
+    it("exposes Prometheus metrics", async function () {
+        const metrics = createMetricsRegistry();
+        const counter = metrics.counter("health_requests_total", "Health requests.");
+        counter.inc();
+        const server = await startHealthServer(createNode([]), { port: 0, minPeers: 0, metrics });
+        const { port } = server.address();
+
+        try {
+            const response = await fetch(`http://127.0.0.1:${port}/metrics`);
+            expect(response.status).to.equal(200);
+            expect(response.headers.get("content-type")).to.include("text/plain");
+            expect(await response.text()).to.include("health_requests_total 1");
+        } finally {
+            await server.stop();
+        }
     });
 });
