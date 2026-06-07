@@ -11,6 +11,7 @@ import { fromString }   from 'uint8arrays/from-string'
 import { multiaddr }    from '@multiformats/multiaddr'
 import { createLogger } from './logger.js'
 import { classifyMetricError, networkMetrics } from './metrics.js'
+import { createRateLimiter, loadRateLimitConfig, messageRateLimitKey } from './rate-limit.js'
 import { loadRetryConfig, withRetry } from './retry.js'
 import {
     loadMessageValidationConfig,
@@ -28,6 +29,7 @@ const PROTOCOL    = '/atos/1.0.0'
 const logger      = createLogger('network')
 const retryConfig = loadRetryConfig()
 const messageConfig = loadMessageValidationConfig()
+const rateLimitConfig = loadRateLimitConfig()
 
 const AGENT_PORTS = {
     deploy   : 4001,
@@ -44,6 +46,7 @@ const agentRegistry = new Map()
 // ── Topic handlers, isolated per node ──────────────────
 const topicHandlers = new WeakMap()
 const replayProtectors = new WeakMap()
+const messageRateLimiters = new WeakMap()
 
 // ── Helpers ────────────────────────────────────────────
 function getUniquePeerCount(node) {
@@ -111,6 +114,18 @@ export async function createAgentNode(role) {
             const message = parseMessage(raw, messageConfig)
             verifyMessageAuthentication(message, authConfig.secret)
             replayProtectors.get(node).assertFresh(message)
+            try {
+                messageRateLimiters.get(node).consume(messageRateLimitKey(message))
+            } catch (error) {
+                if (error.code === 'RATE_LIMITED') {
+                    networkMetrics.messagesRateLimited.inc({
+                        role,
+                        sender: message.from,
+                        topic: message.topic
+                    })
+                }
+                throw error
+            }
 
             networkMetrics.messageBytes.observe({ direction: 'inbound', role }, receivedBytes)
             networkMetrics.messagesReceived.inc({ role, topic: message.topic })
@@ -162,6 +177,7 @@ export async function createAgentNode(role) {
 
     node.role = role
     replayProtectors.set(node, createReplayProtector(authConfig))
+    messageRateLimiters.set(node, createRateLimiter(rateLimitConfig))
     networkMetrics.connectedPeers.set({ role }, 0)
 
     logger.info('agent_started', {

@@ -134,6 +134,8 @@ npm run analytics
 - Peer dials use bounded backoff configured by the `NETWORK_RETRY_*` variables.
 - Inbound messages are rejected when they violate the envelope schema or exceed
   `NETWORK_MAX_MESSAGE_BYTES`.
+- Authenticated inbound messages use per-sender and per-topic token buckets configured
+  by the `NETWORK_RATE_LIMIT_*` variables.
 
 ## Frontend
 

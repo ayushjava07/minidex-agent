@@ -238,6 +238,11 @@ export const networkMetrics = Object.freeze({
         'Total network message processing or delivery failures.',
         ['direction', 'reason', 'role']
     ),
+    messagesRateLimited: metrics.counter(
+        'atos_network_messages_rate_limited_total',
+        'Total authenticated network messages rejected by rate limiting.',
+        ['role', 'sender', 'topic']
+    ),
     messageBytes: metrics.histogram(
         'atos_network_message_bytes',
         'Size of network messages in bytes.',
@@ -248,6 +253,7 @@ export const networkMetrics = Object.freeze({
 
 export function classifyMetricError(error) {
     const message = error?.message ?? ''
+    if (error?.code === 'RATE_LIMITED') return 'rate_limit'
     if (message.includes('authentication')) return 'authentication'
     if (message.includes('Replay')) return 'replay'
     if (message.includes('maximum size')) return 'oversized'
