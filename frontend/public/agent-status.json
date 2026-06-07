@@ -1,7 +1,0 @@
-{
-  "deployAgent": "active",
-  "monitorAgent": "active",
-  "reportAgent": "failed",
-  "latestCid": "bafybeigdyrztj4samplecid",
-  "latestReport": "Last check: liquidity healthy, 2 swaps in previous interval."
-}

@@ -1,11 +1,11 @@
-// agents/network.js — FINAL WORKING VERSION
+// agents/network.js — v2.1.0
 
 import { createLibp2p } from 'libp2p'
 import { tcp }          from '@libp2p/tcp'
 import { noise }        from '@chainsafe/libp2p-noise'
 import { yamux }        from '@chainsafe/libp2p-yamux'
 import { identify }     from '@libp2p/identify'
-import { pipe }         from 'it-pipe'
+import { Uint8ArrayList } from 'uint8arraylist'
 import { toString }     from 'uint8arrays/to-string'
 import { fromString }   from 'uint8arrays/from-string'
 import { multiaddr }    from '@multiformats/multiaddr'
@@ -25,8 +25,8 @@ const AGENT_PORTS = {
 // Maps role → { peerId, port }
 const agentRegistry = new Map()
 
-// ── Topic handlers ─────────────────────────────────────
-const topicHandlers = new Map()
+// ── Topic handlers, isolated per node ──────────────────
+const topicHandlers = new WeakMap()
 
 // ── Helpers ────────────────────────────────────────────
 const sleep = ms => new Promise(r => setTimeout(r, ms))
@@ -62,15 +62,15 @@ export async function createAgentNode(role) {
     await node.handle(PROTOCOL, async (stream) => {
         try {
             const chunks = []
-            for await (const chunk of stream.source) {
-                chunks.push(chunk)
+            for await (const chunk of stream) {
+                chunks.push(chunk instanceof Uint8ArrayList ? chunk.subarray() : chunk)
             }
             const raw     = chunks.map(c => toString(c)).join('')
             const message = JSON.parse(raw)
 
             console.log(`[Network][${role}] ← [${message.topic}] from [${message.from}]`)
 
-            const handlers = topicHandlers.get(message.topic)
+            const handlers = topicHandlers.get(node)?.get(message.topic)
             if (handlers) {
                 for (const h of handlers) h(message.data)
             }
@@ -88,13 +88,14 @@ export async function createAgentNode(role) {
     })
 
     node.addEventListener('peer:disconnect', () => {
-        console.log(`[Network][${role}] ❌ Peers: ${getUniquePeerCount(node)}`)
+        const cnt = getUniquePeerCount(node)
+        if (cnt === 0) return
+        console.log(`[Network][${role}] ❌ Peers: ${cnt}`)
     })
 
     await node.start()
 
     // ── Register self in shared registry ─────────────
-    // This is the KEY — store peerId so others can dial
     agentRegistry.set(role, {
         peerId : node.peerId,
         port   : port
@@ -134,11 +135,7 @@ export async function connectToAllPeers(node) {
                 multiaddrs: [multiaddr(`/ip4/127.0.0.1/tcp/${info.port}`)]
             })
 
-            const conn = await node.dial(info.peerId)
-
-            // Step 3: Verify the connection by opening a protocol stream.
-            const testStream = await conn.newStream(PROTOCOL)
-            await testStream.close()
+            await node.dial(info.peerId)
 
             console.log(`[Network][${myRole}] ✅ [${role}] at port ${info.port}`)
             connected++
@@ -175,12 +172,6 @@ export async function publishMessage(node, topic, data) {
             const targetAddr = multiaddr(`/ip4/127.0.0.1/tcp/${info.port}`)
             await node.peerStore.merge(info.peerId, { multiaddrs: [targetAddr] })
             const conn = await node.dial(info.peerId)
-            
-            // Verify connection works
-            const testStream = await conn.newStream(PROTOCOL)
-            testStream.closeRead()
-            testStream.closeWrite()
-            
             unique.push(conn)
         } catch (err) {
             // Connection failed, skip this peer
@@ -204,7 +195,7 @@ export async function publishMessage(node, topic, data) {
     for (const conn of unique) {
         try {
             const stream = await conn.newStream(PROTOCOL)
-            await pipe([fromString(payload)], stream.sink)
+            stream.sendData(new Uint8ArrayList(fromString(payload)))
             await stream.close()
             sent++
             console.log(`[Network][${node.role}] → [${topic}] → ${conn.remotePeer.toString().slice(0, 16)}...`)
@@ -219,10 +210,14 @@ export async function publishMessage(node, topic, data) {
 
 // ─────────────────────────────────────────────────────────
 export function subscribeToTopic(node, topic, handler) {
-    if (!topicHandlers.has(topic)) {
-        topicHandlers.set(topic, [])
+    if (!topicHandlers.has(node)) {
+        topicHandlers.set(node, new Map())
     }
-    topicHandlers.get(topic).push(handler)
+    const nodeHandlers = topicHandlers.get(node)
+    if (!nodeHandlers.has(topic)) {
+        nodeHandlers.set(topic, [])
+    }
+    nodeHandlers.get(topic).push(handler)
     console.log(`[Network][${node.role}] Subscribed: ${topic}`)
 }
 
