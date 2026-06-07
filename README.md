@@ -128,6 +128,7 @@ npm run analytics
 
 - Network logs are JSON; set `LOG_LEVEL` to `debug`, `info`, `warn`, or `error`.
 - Liveness and readiness are available at `/health/live` and `/health/ready`.
+- Prometheus metrics are available at `/metrics` on each agent health port.
 - Health ports are `4101` through `4105` in agent role order.
 - `HEALTH_MIN_PEERS` controls readiness.
 - Peer dials use bounded backoff configured by the `NETWORK_RETRY_*` variables.

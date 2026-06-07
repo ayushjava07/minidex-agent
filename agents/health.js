@@ -1,6 +1,7 @@
 import http from 'node:http'
 import { getNetworkStatus } from './network.js'
 import { createLogger } from './logger.js'
+import { metrics } from './metrics.js'
 
 const logger = createLogger('health')
 
@@ -17,11 +18,17 @@ function sendJson(response, statusCode, body) {
     response.end(JSON.stringify(body))
 }
 
+function sendMetrics(response, registry) {
+    response.writeHead(200, { 'content-type': 'text/plain; version=0.0.4; charset=utf-8' })
+    response.end(registry.render())
+}
+
 export async function startHealthServer(node, options = {}) {
     const role = node.role
     const port = options.port ?? HEALTH_PORTS[role]
     const host = options.host ?? '127.0.0.1'
     const minPeers = options.minPeers ?? Number(process.env.HEALTH_MIN_PEERS || 1)
+    const metricsRegistry = options.metrics ?? metrics
     const startedAt = Date.now()
 
     if (!Number.isInteger(port) || port < 0 || port > 65535) {
@@ -51,6 +58,11 @@ export async function startHealthServer(node, options = {}) {
                 status: ready ? 'ready' : 'not_ready',
                 ...base
             })
+            return
+        }
+
+        if (request.url === '/metrics') {
+            sendMetrics(response, metricsRegistry)
             return
         }
 
