@@ -1,6 +1,8 @@
 import "dotenv/config";
 import { HardhatUserConfig } from "hardhat/config";
-import "@nomicfoundation/hardhat-toolbox";
+import "@nomicfoundation/hardhat-chai-matchers";
+import "@nomicfoundation/hardhat-ethers";
+import "@nomicfoundation/hardhat-ignition-ethers";
 import { loadOptionalSepoliaConfig } from "./config/env.js";
 
 const sepolia = loadOptionalSepoliaConfig();
