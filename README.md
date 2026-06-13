@@ -3,6 +3,7 @@
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](https://choosealicense.com/licenses/mit/)
 [![Network](https://img.shields.io/badge/Network-Sepolia-blue.svg)]()
 [![Frontend](https://img.shields.io/badge/Frontend-Vercel-black.svg)]()
+[![Filecoin](https://img.shields.io/badge/Storage-Filecoin-0090FF.svg)]()
 [![Agents](https://img.shields.io/badge/Agents-5%20Running-brightgreen.svg)]()
 
 ## Overview
@@ -230,16 +231,18 @@ docker run --rm --init --env-file .env \
 
 https://minidex-agent.vercel.app
 
-Features: MetaMask connect, token swap, liquidity management, pool stats, agent dashboard.
+Features: MetaMask connect, token swap, liquidity management, pool stats, agent dashboard, Filecoin storage dashboard.
 
 ## Project Structure
 
 ```
 agents/       Multi-agent runtime, networking, security, and workflows
+  filecoin-bridge.js  Agent-facing Filecoin integration
+backend/      Filecoin storage API and orchestration
 config/       Environment loading and validation
 contracts/    Solidity contracts
-docs/         Security and deployment documentation
-frontend/     React dashboard
+docs/         Security, deployment, and Filecoin documentation
+frontend/     React dashboard, including Filecoin storage
 ignition/     Hardhat Ignition deployment module
 schemas/      IPLD schemas
 scripts/      Operational and validation scripts
