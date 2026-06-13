@@ -220,8 +220,7 @@ export async function verifyStorageProof(cid, filecoinCid) {
   return { valid: true, cid, filecoinCid: filecoinCid || cid, verifiedAt: Date.now() }
 }
 
-export function getStorachaStatus() {
-  const config = getConfig()
+export function getStorachaStatus(config = loadFilecoinConfig(process.env, { requireProvider: false })) {
   return {
     enabled: config.storacha.enabled,
     endpoint: config.storacha.enabled ? config.storacha.endpoint : null,
@@ -229,8 +228,7 @@ export function getStorachaStatus() {
   }
 }
 
-export function getLotusStatus() {
-  const config = getConfig()
+export function getLotusStatus(config = loadFilecoinConfig(process.env, { requireProvider: false })) {
   return {
     enabled: config.lotus.enabled,
     endpoint: config.lotus.enabled ? config.lotus.apiUrl : null

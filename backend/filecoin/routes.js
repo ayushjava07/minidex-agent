@@ -1,4 +1,4 @@
-import express from 'express'
+import express, { Router } from 'express'
 import { createLogger } from '../../agents/logger.js'
 import { storeData, retrieveData, verifyData, getStoreStats } from './store.js'
 import { generateCID, getStorachaStatus, getLotusStatus } from './client.js'
@@ -8,7 +8,7 @@ import { createFilecoinRateLimiter, createFilecoinAuthMiddleware, createFilecoin
 const logger = createLogger('filecoin-routes')
 
 export function createFilecoinRouter(options = {}) {
-  const config = loadFilecoinConfig()
+  const config = loadFilecoinConfig(process.env, { requireProvider: false })
   const router = Router()
 
   const auth = options.auth ?? createFilecoinAuthMiddleware(options.apiToken)
@@ -22,8 +22,8 @@ export function createFilecoinRouter(options = {}) {
   router.get('/health', (req, res) => {
     res.json({
       status: 'ok',
-      storacha: getStorachaStatus(),
-      lotus: getLotusStatus(),
+      storacha: getStorachaStatus(config),
+      lotus: getLotusStatus(config),
       timestamp: Date.now()
     })
   })
@@ -65,8 +65,8 @@ export function createFilecoinRouter(options = {}) {
 
   router.get('/status', (req, res) => {
     res.json({
-      storacha: getStorachaStatus(),
-      lotus: getLotusStatus(),
+      storacha: getStorachaStatus(config),
+      lotus: getLotusStatus(config),
       config: {
         api: config.api,
         upload: config.upload,
@@ -95,7 +95,7 @@ export function getFilecoinApiServer(options = {}) {
 }
 
 export async function startFilecoinApiServer(options = {}) {
-  const config = loadFilecoinConfig()
+  const config = loadFilecoinConfig(process.env, { requireProvider: false })
   const app = getFilecoinApiServer(options)
   const port = options.port ?? config.api.port
   const host = options.host ?? config.api.host

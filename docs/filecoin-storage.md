@@ -147,14 +147,15 @@ const stop = createAutoBackupHandler(node, {
 
 ## Frontend
 
-The `FilecoinDashboard` component is at `frontend/src/FilecoinDashboard.jsx`.
-Import it in `App.jsx` or mount as a route:
+The Filecoin dashboard route is composed in `frontend/src/pages/FilecoinPage.jsx`
+from focused components under `frontend/src/components/filecoin/`. It is mounted
+in `App.jsx`:
 
 ```jsx
-import FilecoinDashboard from './FilecoinDashboard.jsx'
+import FilecoinPage from './pages/FilecoinPage'
 
 // In your router:
-<Route path="/filecoin" element={<FilecoinDashboard />} />
+<Route path="/filecoin" element={<FilecoinPage />} />
 ```
 
 ## Metrics

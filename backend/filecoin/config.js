@@ -26,7 +26,7 @@ function positiveInteger(value, name) {
   return n
 }
 
-export function loadFilecoinConfig(env = process.env) {
+export function loadFilecoinConfig(env = process.env, options = {}) {
   const issues = []
 
   const storachaToken = env.STORACHA_TOKEN || ''
@@ -51,7 +51,7 @@ export function loadFilecoinConfig(env = process.env) {
   const apiHost = nonEmptyString(env.FILECOIN_API_HOST || '127.0.0.1', 'FILECOIN_API_HOST')
   const apiRateLimitRps = positiveInteger(env.FILECOIN_API_RATE_LIMIT_RPS || 10, 'FILECOIN_API_RATE_LIMIT_RPS')
 
-  if (!storachaToken && !lotusApi) {
+  if (options.requireProvider !== false && !storachaToken && !lotusApi) {
     issues.push({
       section: 'filecoin',
       message: 'At least one of STORACHA_TOKEN or LOTUS_API_URL must be set'

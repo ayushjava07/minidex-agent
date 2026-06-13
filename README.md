@@ -120,6 +120,16 @@ npm run test:network
 npm run build
 ```
 
+### Run The Dashboard
+
+```bash
+npm run dev
+```
+
+The dashboard and read-only status APIs start without a Filecoin provider.
+Configure `STORACHA_TOKEN` or `LOTUS_API_URL` before using upload and retrieval
+operations.
+
 ### Local Contract Deployment
 
 ```bash
@@ -238,7 +248,8 @@ Features: MetaMask connect, token swap, liquidity management, pool stats, agent 
 ```
 agents/       Multi-agent runtime, networking, security, and workflows
   filecoin-bridge.js  Agent-facing Filecoin integration
-backend/      Filecoin storage API and orchestration
+backend/      Express app, route groups, and Filecoin storage orchestration
+  routes/     Dashboard-facing API route groups
 config/       Environment loading and validation
 contracts/    Solidity contracts
 docs/         Security, deployment, and Filecoin documentation

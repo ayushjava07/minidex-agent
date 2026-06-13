@@ -2,9 +2,56 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  margin: 0;
-  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background-color: #ffffff;
-  color: #1e293b;
+@layer base {
+  body {
+    @apply bg-slate-50 text-slate-900 antialiased;
+  }
+  .dark body, body.dark {
+    @apply bg-surface-dark text-slate-100;
+  }
+}
+
+@layer components {
+  .glass {
+    @apply rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm backdrop-blur-md;
+  }
+  .dark .glass {
+    @apply border-surface-border/60 bg-surface-card/80 shadow-lg shadow-black/10;
+  }
+  .glass-dark {
+    @apply rounded-2xl border border-slate-200/40 bg-white/90 shadow-sm backdrop-blur-lg;
+  }
+  .dark .glass-dark {
+    @apply border-surface-border/40 bg-surface-card/90 shadow-lg shadow-black/20;
+  }
+  .stat-card {
+    @apply glass p-5 transition-all duration-300 hover:shadow-md hover:scale-[1.02];
+  }
+  .input-field {
+    @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm transition-colors focus:border-filecoin-500 focus:ring-1 focus:ring-filecoin-500;
+  }
+  .dark .input-field {
+    @apply border-surface-border bg-surface-dark text-slate-100 focus:border-filecoin-400 focus:ring-filecoin-400;
+  }
+  .btn-primary {
+    @apply rounded-lg bg-filecoin-600 px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-filecoin-700 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-secondary {
+    @apply rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition-all hover:bg-slate-50;
+  }
+  .dark .btn-secondary {
+    @apply border-surface-border bg-surface-card text-slate-200 hover:bg-surface-border;
+  }
+  .sidebar-link {
+    @apply flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-600 transition-all hover:bg-slate-100 hover:text-slate-900;
+  }
+  .dark .sidebar-link {
+    @apply text-slate-400 hover:bg-surface-border hover:text-slate-100;
+  }
+  .sidebar-link.active {
+    @apply bg-filecoin-50 text-filecoin-700 font-semibold;
+  }
+  .dark .sidebar-link.active {
+    @apply bg-filecoin-950/40 text-filecoin-300;
+  }
 }
